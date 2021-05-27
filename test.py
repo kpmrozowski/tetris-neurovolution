@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from src.tetris import Tetris
 import torch.nn as nn
+from src.deep_q_network import DeepQNetwork
 
 
 def get_args():
@@ -25,16 +26,18 @@ def get_args():
     return args
 
 
-def test(opt):
+def test(opt, conv1, conv2, conv3):
     if torch.cuda.is_available():
         torch.cuda.manual_seed(123)
     else:
         torch.manual_seed(123)
-    if torch.cuda.is_available():
-        model = torch.load("{}/tetris".format(opt.saved_path))
-    else:
-        model = torch.load("{}/tetris".format(opt.saved_path), map_location=lambda storage, loc: storage)
+    # if torch.cuda.is_available():
+    #     model = torch.load("{}/tetris".format(opt.saved_path))
+    # else:
+    #     model = torch.load("{}/tetris".format(opt.saved_path), map_location=lambda storage, loc: storage)
 
+    model = DeepQNetwork()
+    model.eval()
     if False: # save weights
         ii = 1
         for layer in model.modules():
@@ -52,19 +55,19 @@ def test(opt):
                     weights3 = weights3.detach().numpy()
                     pd.DataFrame(weights3).to_csv('trained_models/conv{}.csv'.format(ii))
                 ii += 1
-    if False: # set weights
+    if False: # load csv weights
         ii = 1
         for layer in model.modules():
             if isinstance(layer, nn.Linear):
-                if ii == 1:
-                    layer.weight.data = torch.Tensor(weights1)
-                if ii == 2:
-                    layer.weight.data = torch.Tensor(weights2)
-                if ii == 3:
-                    layer.weight.data = torch.Tensor(weights3)
-                ii += 1
+                with torch.no_grad():
+                    if ii == 1:
+                        layer.weight.data = torch.Tensor(conv1).cuda()
+                    if ii == 2:
+                        layer.weight.data = torch.Tensor(conv2).cuda()
+                    if ii == 3:
+                        layer.weight.data = torch.Tensor(conv1).cuda()
+                    ii += 1
 
-    model.eval()
     env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
     env.reset()
     if torch.cuda.is_available():
@@ -80,14 +83,18 @@ def test(opt):
         predictions = model(next_states)[:, 0]
         index = torch.argmax(predictions).item()
         action = next_actions[index]
-        score, done = env.step(action, render=True, video=out)
+        result, done = env.step(action, render=True, video=out)
 
         if done:
             out.release()
-            return score
+            return result
         
 
 
 if __name__ == "__main__":
-    opt = get_args()
-    test(opt)
+    options = get_args()
+    nn1 = np.genfromtxt('trained_models/conv1.csv', delimiter=',')
+    nn2 = np.genfromtxt('trained_models/conv2.csv', delimiter=',')
+    nn3 = np.genfromtxt('trained_models/conv3.csv', delimiter=',')
+    score = test(options, nn1, nn2, nn3)
+    print('score = ', score)

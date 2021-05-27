@@ -234,7 +234,7 @@ class Tetris:
         if self.gameover:
             self.score -= 2
 
-        return score, self.gameover
+        return self.score, self.gameover
 
     def render(self, video=None):
         img = np.zeros((self.height * self.block_size, self.width * self.block_size, 3))
