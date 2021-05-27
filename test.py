@@ -4,7 +4,10 @@
 import argparse
 import torch
 import cv2
+import pandas as pd
+import numpy as np
 from src.tetris import Tetris
+import torch.nn as nn
 
 
 def get_args():
@@ -31,6 +34,36 @@ def test(opt):
         model = torch.load("{}/tetris".format(opt.saved_path))
     else:
         model = torch.load("{}/tetris".format(opt.saved_path), map_location=lambda storage, loc: storage)
+
+    if False: # save weights
+        ii = 1
+        for layer in model.modules():
+            if isinstance(layer, nn.Linear):
+                if ii == 1:
+                    weights1 = layer.weight.cpu()
+                    weights1 = weights1.detach().numpy()
+                    pd.DataFrame(weights1).to_csv('trained_models/conv{}.csv'.format(ii))
+                if ii == 2:
+                    weights2 = layer.weight.cpu()
+                    weights2 = weights2.detach().numpy()
+                    pd.DataFrame(weights2).to_csv('trained_models/conv{}.csv'.format(ii))
+                if ii == 3:
+                    weights3 = layer.weight.cpu()
+                    weights3 = weights3.detach().numpy()
+                    pd.DataFrame(weights3).to_csv('trained_models/conv{}.csv'.format(ii))
+                ii += 1
+    if False: # set weights
+        ii = 1
+        for layer in model.modules():
+            if isinstance(layer, nn.Linear):
+                if ii == 1:
+                    layer.weight.data = torch.Tensor(weights1)
+                if ii == 2:
+                    layer.weight.data = torch.Tensor(weights2)
+                if ii == 3:
+                    layer.weight.data = torch.Tensor(weights3)
+                ii += 1
+
     model.eval()
     env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
     env.reset()
@@ -47,11 +80,11 @@ def test(opt):
         predictions = model(next_states)[:, 0]
         index = torch.argmax(predictions).item()
         action = next_actions[index]
-        _, done = env.step(action, render=True, video=out)
+        score, done = env.step(action, render=True, video=out)
 
         if done:
             out.release()
-            break
+            return score
         
 
 
