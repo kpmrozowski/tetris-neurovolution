@@ -7,7 +7,7 @@ class DeepQNetwork(nn.Module):
     def __init__(self):
         super(DeepQNetwork, self).__init__()
 
-        self.conv1 = nn.Sequential(nn.Linear(5, 64), nn.ReLU())
+        self.conv1 = nn.Sequential(nn.Linear(4, 64), nn.ReLU())
         self.conv2 = nn.Sequential(nn.Linear(64, 64), nn.ReLU())
         self.conv3 = nn.Sequential(nn.Linear(64, 1))
 
