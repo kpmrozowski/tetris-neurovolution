@@ -5,14 +5,15 @@ import argparse
 import os
 import shutil
 from random import random, randint, sample
+from torch.multiprocessing import Pool, Process, set_start_method
 
 import numpy as np
 import torch
 import torch.nn as nn
 from tensorboardX import SummaryWriter
 
-from src.deep_q_network import DeepQNetwork
-from src.tetris import Tetris
+from deep_q_network import DeepQNetwork
+from tetris import Tetris
 from collections import deque
 
 
@@ -146,4 +147,9 @@ def train(opt):
 
 if __name__ == "__main__":
     opt = get_args()
-    train(opt)
+    try:
+        set_start_method('spawn')  
+        train(opt)  
+    except RuntimeError:
+        pass
+    

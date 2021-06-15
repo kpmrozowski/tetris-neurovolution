@@ -1,6 +1,11 @@
 """
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
+
+weights_init_min = -1
+weights_init_max=1
+
+import torch
 import torch.nn as nn
 
 class DeepQNetwork(nn.Module):
@@ -11,13 +16,16 @@ class DeepQNetwork(nn.Module):
         self.conv2 = nn.Sequential(nn.Linear(64, 64), nn.ReLU())
         self.conv3 = nn.Sequential(nn.Linear(64, 1))
 
-        self._create_weights()
+        self.conv1.weight.requires_grad_(False)
+        self.conv2.weight.requires_grad_(False)
+        self.conv3.weight.requires_grad_(False)
 
-    def _create_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                nn.init.constant_(m.bias, 0)
+        torch.nn.init.uniform_(self.conv1.weight,
+                                   a=weights_init_min, b=weights_init_max)
+        torch.nn.init.uniform_(self.conv2.weight,
+                                   a=weights_init_min, b=weights_init_max)
+        torch.nn.init.uniform_(self.conv3.weight,
+                                   a=weights_init_min, b=weights_init_max)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -25,3 +33,4 @@ class DeepQNetwork(nn.Module):
         x = self.conv3(x)
 
         return x
+
