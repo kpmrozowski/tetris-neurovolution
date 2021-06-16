@@ -5,6 +5,7 @@ import torch.nn as nn
 import functools
 
 from src.deep_q_network import DeepQNetwork
+from test import Test
 
 elitism_pct = 0.2
 mutation_prob = 0.2
@@ -24,7 +25,14 @@ class Population:
     def __init__(self, size=50, old_population=None, crossover_mode="mean", selection_mode="ranking"):
         self.size = size
         if old_population is None:
+            nn1 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv1.csv', delimiter=',')
+            nn2 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv2.csv', delimiter=',')
+            nn3 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv3.csv', delimiter=',')
             self.models = [DeepQNetwork() for i in range(size)]
+            self.make_model(nn1, nn2, nn3)
+            self.mutate()
+            self.fitnesses = np.array([test(model) for model in self.models])
+
         else:
             #1. Population
             self.old_models = old_population.models
@@ -34,7 +42,22 @@ class Population:
             self.selection_mode = selection_mode
             self.crossover(crossover_mode, selection_mode)
             self.mutate()
-        self.fitnesses = np.zeros(self.size)
+        
+    
+    def make_model(self, nn1, nn2, nn3):
+        for model in self.models:
+            model.eval()
+            ii = 1
+            for layer in model.modules():
+                if isinstance(layer, nn.Linear):
+                    with torch.no_grad():
+                        if ii == 1:
+                            layer.weight.data = torch.Tensor(nn1).cuda()
+                        if ii == 2:
+                            layer.weight.data = torch.Tensor(nn2).cuda()
+                        if ii == 3:
+                            layer.weight.data = torch.Tensor(nn3).cuda()
+                        ii += 1
 
     def crossover(self,crossover_mode, selection_mode):
         print("Crossver")
