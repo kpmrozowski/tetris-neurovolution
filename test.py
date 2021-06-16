@@ -8,7 +8,9 @@ import pandas as pd
 import numpy as np
 from src.tetris import Tetris
 import torch.nn as nn
+from torch.multiprocessing import Pool, Process, set_start_method
 from src.deep_q_network import DeepQNetwork
+from src.gen_algo import Population
 
 
 def get_args():
@@ -55,7 +57,7 @@ def test(opt, conv1, conv2, conv3):
                     weights3 = weights3.detach().numpy()
                     pd.DataFrame(weights3).to_csv('trained_models/conv{}.csv'.format(ii))
                 ii += 1
-    if False: # load csv weights
+    if True: # load csv weights
         ii = 1
         for layer in model.modules():
             if isinstance(layer, nn.Linear):
@@ -65,7 +67,7 @@ def test(opt, conv1, conv2, conv3):
                     if ii == 2:
                         layer.weight.data = torch.Tensor(conv2).cuda()
                     if ii == 3:
-                        layer.weight.data = torch.Tensor(conv1).cuda()
+                        layer.weight.data = torch.Tensor(conv3).cuda()
                     ii += 1
 
     env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
@@ -93,8 +95,14 @@ def test(opt, conv1, conv2, conv3):
 
 if __name__ == "__main__":
     options = get_args()
-    nn1 = np.genfromtxt('trained_models/conv1.csv', delimiter=',')
-    nn2 = np.genfromtxt('trained_models/conv2.csv', delimiter=',')
-    nn3 = np.genfromtxt('trained_models/conv3.csv', delimiter=',')
-    score = test(options, nn1, nn2, nn3)
-    print('score = ', score)
+
+    nn1 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv1.csv', delimiter=',')
+    nn2 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv2.csv', delimiter=',')
+    nn3 = np.genfromtxt('/Users/joannafrankiewicz/tetris/tetris-neurovolution/trained_models/conv3.csv', delimiter=',')
+    try:
+        set_start_method('spawn')  
+        score = test(options, nn1, nn2, nn3)
+        print('score = ', score)
+    except RuntimeError:
+        pass
+    

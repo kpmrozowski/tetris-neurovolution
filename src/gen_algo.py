@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import functools
 
-from deep_q_network import DeepQNetwork
+from src.deep_q_network import DeepQNetwork
 
 elitism_pct = 0.2
 mutation_prob = 0.2
@@ -19,7 +19,6 @@ device = 'cpu'
 #3. Parents selection
 #4. Crossover
 #5. Mutation
-
 
 class Population:
     def __init__(self, size=50, old_population=None, crossover_mode="mean", selection_mode="ranking"):
@@ -71,7 +70,8 @@ class Population:
                     for i in range(c[0].weight.size()[0]):
                         for j in range(c[0].weight.size()[1]):
                             if crossover_mode == "mean":
-                                c[0].weight.data[i][j] = conv_b[c_i][0].weight.data[i][j] / conv_a[c_i][0].weight.data[i][j]
+                                a = np.random.random()
+                                c[0].weight.data[i][j] = a*conv_b[c_i][0].weight.data[i][j] + (1-a)*conv_a[c_i][0].weight.data[i][j]
                             if crossover_mode == "two_point":
                                 point_one = np.random.random()
                                 point_two = np.random.random()
