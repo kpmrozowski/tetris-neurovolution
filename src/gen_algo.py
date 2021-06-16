@@ -31,6 +31,7 @@ class Population:
             self.models = [torch.load("trained_models/tetris") for i in range(size)]
             self.mutate()
 
+            self.fitness = np.zeros(size)
             self.multi_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
         else:
@@ -49,13 +50,12 @@ class Population:
         set_start_method('spawn', force=True)
         processes = []
         for i in range(size):
-            p = Process(target=Test, args=(self.models[i], i,))
+            p = Process(target=Test, args=(self.models[i], i, self.fitness))
             p.start()
             processes.append(p)
         for p in processes:
             p.join()
-        self.fitness = p
-
+        print('self.fitness:', self.fitness)
 
     def crossover(self,crossover_mode="mean", selection_mode="ranking"):
         print("Crossver")

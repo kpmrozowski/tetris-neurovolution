@@ -16,7 +16,7 @@ tetris_height =20
 tetris_block_size = 30
 
 
-def Test(model, i):
+def Test(model, i, fitness):
     if torch.cuda.is_available():
         torch.cuda.manual_seed(123)
     else:
@@ -74,6 +74,6 @@ def Test(model, i):
         result, done = env.step(action, render=False)
 
         if done:
-            print("{}. result={}".format(i, result))
-            return result
+            # print("{}. result={}".format(i, result))
+            fitness[i] = result
         
