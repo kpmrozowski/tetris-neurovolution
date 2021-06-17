@@ -15,10 +15,58 @@ tetris_width = 10
 tetris_height = 20
 tetris_block_size = 30
 
-
-def one_thread_workout(models, i, thread_elements, fitnesses):
+def crossover_prepare(crossovers_in_queue, size, selected_ids, old_models, crossover_mode, model_id, models):
+    queued_count = 0
+    for k in range(model_id):
+        queued_count += crossovers_in_queue[k]
     results = []
-    for j in range(thread_elements * i, thread_elements * (i + 1)):
+    for j in range(queued_count, queued_count + crossovers_in_queue[model_id]):
+        models[model_id] = multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models)
+
+def multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models):
+    # 3. Parents selection
+    mother_id = np.random.randint(size)
+    father_id = np.random.randint(size)
+
+    model_a = old_models[selected_ids[mother_id]]
+    model_b = old_models[selected_ids[father_id]]
+    model_c = torch.load("trained_models/tetris")
+
+    conv_a = [model_a.conv1, model_a.conv2, model_a.conv3]
+    conv_b = [model_b.conv1, model_b.conv2, model_b.conv3]
+    conv_c = [model_c.conv1, model_c.conv2, model_c.conv3]
+
+    for c_i in range(len(conv_b)):
+        # 4. Crossover
+        for conv in range(3):
+            for i in range(conv_c[c_i][0].weight.size()[0]):
+                for j in range(conv_c[c_i][0].weight.size()[1]):
+                    if crossover_mode == "mean":
+                        a = np.random.random()
+                        conv_c[c_i][0].weight.data[i][j] = a * conv_b[c_i][0].weight.data[i][j] + (1 - a) * \
+                            conv_a[c_i][0].weight.data[i][j]
+                    if crossover_mode == "two_point":
+                        point_one = np.random.random()
+                        point_two = np.random.random()
+
+                        if point_one > point_two:
+                            a = point_one
+                            point_one = point_two
+                            point_two = a
+                        # To jest zle: (conv_c[1][0].weight.data[0:0.12345][4]) ?
+                        conv_c[c_i][0].weight.data[0:point_one][j] = conv_b[c_i][0].weight.data[0:point_one][j]
+                        conv_c[c_i][0].weight.data[point_one:point_two][j] = \
+                            conv_c[c_i][0].weight.data[point_one:point_two][j]
+                        conv_c[c_i][0].weight.data[point_two:][j] = conv_b[c_i][0].weight.data[point_two:][j]
+    print("cr-", model_id, end=" ", sep="")
+    return model_c
+
+def one_thread_workout(models, i, tests_in_queue, fitnesses):
+    queued_count = 0
+    for k in range(i):
+        queued_count += tests_in_queue[k]
+    results = []
+    for j in range(queued_count, queued_count + tests_in_queue[i]):
         results.append(Test(models[j],j, fitnesses))
     print('paial_results:', results)
     return results
