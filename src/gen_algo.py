@@ -31,12 +31,13 @@ class Population:
     def __init__(self, size=50, old_population=None, crossover_mode="mean", selection_mode="ranking", generation_id=0):
         self.size = size
         self.generation_id = generation_id
-        self.fitnesses = np.zeros(self.size)
+        self.fitnesses = torch.zeros(self.size)
         if old_population is None:
             self.old_models = [torch.load("trained_models/tetris") for i in range(size)]
             self.models = [torch.load("trained_models/tetris") for i in range(size)]
             self.mutate()
             self.multi_test(size)
+            # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
         else:
             #1. Population
@@ -49,31 +50,32 @@ class Population:
             self.crossover(crossover_mode, selection_mode)
             self.mutate()
             self.multi_test(size)
+            # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
 
     def multi_test(self, size):
         set_start_method('spawn', force=True)
         processes: List[Process] = []
+        self.fitnesses.share_memory_()
         for i in range(2):
-            p = Process(target=one_thread_workout, args=(self.old_models, i, 2,))
+            p = Process(target=one_thread_workout, args=(self.old_models, i, 2, self.fitnesses, ))
             p.start()
             processes.append(p)
         for p in processes:
             p.join()
-        # fitnesses = [item for sublist in p for item in sublist]
-        fitnesses = []
-        print(p)
-        for sublist in p:
-            for item in sublist:
-                fitnesses.append(item)
-        print(fitnesses)
-        self.fitness = fitnesses
+        pass
 
+    def pool_test(self, size):
+        set_start_method('spawn', force=True)
+        with Pool(processes=2) as p:  # Paralleizing over 2 GPUs
+            results = p.apply_async(func=one_thread_workout, args=(self.old_models, 1, 2, self.fitnesses, ))
+            print(results)
 
-    def crossover(self,crossover_mode="mean", selection_mode="ranking"):
+    def crossover(self, crossover_mode="mean", selection_mode="ranking"):
         print("Crossver")
         #2. Fitness
-        sum_fitnesses = np.sum(self.old_fitnesses)
+        old_fitnesses = self.old_fitnesses.to().numpy()
+        sum_fitnesses = np.sum(old_fitnesses)
         probs = [self.old_fitnesses[i] / sum_fitnesses for i in
                  range(self.size)]
 
@@ -82,7 +84,7 @@ class Population:
         sort_indices = np.argsort(probs)[::-1]
         best_model = self.old_models[sort_indices[0]]
         torch.save(best_model, "best_models/tetris_{}".format(self.generation_id))
-        pd.DataFrame(self.old_fitnesses).to_csv('best_models/conv{}.csv'.format(self.generation_id))
+        pd.DataFrame(self.old_fitnesses).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
 
         for i in range(self.size):
             if i < self.size * elitism_pct:
@@ -124,17 +126,19 @@ class Population:
                                     conv_c[c_i][0].weight.data[point_one:point_two][j] = conv_c[c_i][0].weight.data[point_one:point_two][j]
                                     conv_c[c_i][0].weight.data[point_two:][j] = conv_b[c_i][0].weight.data[point_two:][j]
                 self.models.append(model_c)
+            print(i, '-done')
 
     #5. Mutate
     def mutate(self):
         print("Mutating")
-        for model in self.models:
-            convs = [model.conv1, model.conv2, model.conv3]
+        for i in range(self.size):
+            convs = [self.models[i].conv1, self.models[i].conv2, self.models[i].conv3]
             for conv in convs:
                 # for i in range(conv[0].weight.size()[0]):
                 if np.random.random() < mutation_prob:
                     noise = torch.randn(1).mul_(weights_mutate_power).to(device)
                     #add noise to each of neuron
                     conv[0].weight.data.add_(noise[0])
+            print(i, '-done')
 
 

@@ -16,15 +16,15 @@ tetris_height =20
 tetris_block_size = 30
 
 
-def one_thread_workout(models, i, thread_elements):
+def one_thread_workout(models, i, thread_elements, fitnesses):
     results = []
     for j in range(thread_elements * i, thread_elements * (i + 1)):
-        results.append(Test(models[j],j))
-    print('paial_results')
+        results.append(Test(models[j],j, fitnesses))
+    print('paial_results:', results)
     return results
 
 
-def Test(model, i):
+def Test(model, i, fitnesses):
     if torch.cuda.is_available():
         torch.cuda.manual_seed(123)
     else:
@@ -86,6 +86,6 @@ def Test(model, i):
             file_object = open('best_models/all_fitnesses.txt', 'a')
             file_object.write('{},{}\n'.format(i, result))
             file_object.close()
-
+            fitnesses[i] = result
             return result
         
