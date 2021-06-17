@@ -15,14 +15,15 @@ tetris_width = 10
 tetris_height = 20
 tetris_block_size = 30
 
-def crossover_prepare(crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models):
+def crossover_prepare(elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models):
     queued_count = 0
     for k in range(process_id):
         queued_count += crossovers_in_queue[k]
     for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
-        models[model_id] = multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models)
+        if model_id >= elite_count:
+            models[model_id] = multicrossover(size, selected_ids, old_models, crossover_mode, model_id)
 
-def multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models):
+def multicrossover(size, selected_ids, old_models, crossover_mode, model_id):
     # 3. Parents selection
     mother_id = np.random.randint(size)
     father_id = np.random.randint(size)

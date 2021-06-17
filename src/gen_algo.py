@@ -28,6 +28,7 @@ class Population:
     def __init__(
             self,
             old_population=None,
+            elite_count=3,
             crossover_mode="mean",
             selection_mode="ranking",
             generation_id=0,
@@ -37,6 +38,7 @@ class Population:
         self.n_workers = n_workers
         self.generation_id = generation_id
         self.fitnesses = torch.zeros(self.size)
+        self.elite_count = elite_count
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
@@ -109,14 +111,14 @@ class Population:
 
 
     def crossover(self, crossover_mode="mean"):
-        for i in range(3):
+        for i in range(self.elite_count):
             model_c = self.old_models[self.sort_ids[i]]
             self.models[i] = model_c
 
         set_start_method('spawn', force=True)
         processes: List[Process] = []
-        for i in range(3, self.n_workers):
-            p = Process(target=crossover_prepare, args=(self.in_queue, self.size, self.selected_ids,
+        for i in range(self.n_workers):
+            p = Process(target=crossover_prepare, args=(self.elite_count, self.in_queue, self.size, self.selected_ids,
                         self.old_models, crossover_mode, i, self.old_models, ))
             processes.append(p)
         for p in processes:
