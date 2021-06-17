@@ -15,12 +15,11 @@ tetris_width = 10
 tetris_height = 20
 tetris_block_size = 30
 
-def crossover_prepare(crossovers_in_queue, size, selected_ids, old_models, crossover_mode, model_id, models):
+def crossover_prepare(crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models):
     queued_count = 0
-    for k in range(model_id):
+    for k in range(process_id):
         queued_count += crossovers_in_queue[k]
-    results = []
-    for j in range(queued_count, queued_count + crossovers_in_queue[model_id]):
+    for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
         models[model_id] = multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models)
 
 def multicrossover(size, selected_ids, old_models, crossover_mode, model_id, models):

@@ -37,6 +37,11 @@ class Population:
         self.n_workers = n_workers
         self.generation_id = generation_id
         self.fitnesses = torch.zeros(self.size)
+
+        self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
+        for i in range(np.remainder(self.size, self.n_workers)):
+            self.in_queue[i] += 1
+
         if old_population is None:
             self.old_models = [torch.load("trained_models/tetris") for i in range(size)]
             self.models = [torch.load("trained_models/tetris") for i in range(size)]
@@ -67,11 +72,8 @@ class Population:
         set_start_method('spawn', force=True)
         processes: List[Process] = []
         self.fitnesses.share_memory_()
-        tests_in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
-        for i in range(np.remainder(self.size, self.n_workers)):
-            tests_in_queue[i] += 1
         for i in range(self.n_workers):
-            p = Process(target=one_thread_workout, args=(self.old_models, i, tests_in_queue, self.fitnesses, ))
+            p = Process(target=one_thread_workout, args=(self.old_models, i, self.in_queue, self.fitnesses, ))
             p.start()
             processes.append(p)
         for p in processes:
@@ -113,12 +115,8 @@ class Population:
 
         set_start_method('spawn', force=True)
         processes: List[Process] = []
-
-        crossovers_in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
-        for i in range(np.remainder(self.size, self.n_workers)):
-            crossovers_in_queue[i] += 1
         for i in range(3, self.n_workers):
-            p = Process(target=crossover_prepare, args=(crossovers_in_queue, self.size, self.selected_ids,
+            p = Process(target=crossover_prepare, args=(self.in_queue, self.size, self.selected_ids,
                         self.old_models, crossover_mode, i, self.old_models, ))
             processes.append(p)
         for p in processes:
