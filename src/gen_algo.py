@@ -9,13 +9,13 @@ from torch.multiprocessing import Pool, Process, set_start_method
 
 
 from src.deep_q_network import DeepQNetwork
-from test import one_thread_workout
+from test_fit import one_thread_workout
 from test import Test
 import pandas as pd
 
 elitism_pct = 0.2
 mutation_prob = 0.9
-weights_mutate_power = 0.05
+weights_mutate_power = 0.04
 mutation_decrement = 0.96
 device = 'cuda'
 
@@ -39,6 +39,8 @@ class Population:
             self.multi_test(size)
             # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
+            self.succession()
+            self.backup()
         else:
             #1. Population
             self.old_models = old_population.models
@@ -52,6 +54,8 @@ class Population:
             self.multi_test(size)
             # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
+            self.succession()
+            self.backup()
 
     def multi_test(self, size):
         set_start_method('spawn', force=True)
@@ -72,19 +76,21 @@ class Population:
             print(results)
 
     def crossover(self, crossover_mode="mean", selection_mode="ranking"):
-        print("Crossver")
         #2. Fitness
         old_fitnesses = self.old_fitnesses.to().numpy()
         sum_fitnesses = np.sum(old_fitnesses)
-        probs = [self.old_fitnesses[i] / sum_fitnesses for i in
+        probs = [old_fitnesses[i] / sum_fitnesses for i in
                  range(self.size)]
 
         # Sorting descending NNs according to their fitnesses
         #3. Parents selection
         sort_indices = np.argsort(probs)[::-1]
+        print('all fitnesses: ', [old_fitnesses[i] for i in sort_indices])
+        pd.DataFrame([old_fitnesses[i] for i in sort_indices]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
         best_model = self.old_models[sort_indices[0]]
+        print('best model fitness: {}'.format(self.old_fitnesses[sort_indices[0]]))
         torch.save(best_model, "best_models/tetris_{}".format(self.generation_id))
-        pd.DataFrame(self.old_fitnesses).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
+        print("Crossver: done:", end=" ")
 
         for i in range(self.size):
             if i < 3: #self.size * elitism_pct:
@@ -126,12 +132,12 @@ class Population:
                                     conv_c[c_i][0].weight.data[point_one:point_two][j] = conv_c[c_i][0].weight.data[point_one:point_two][j]
                                     conv_c[c_i][0].weight.data[point_two:][j] = conv_b[c_i][0].weight.data[point_two:][j]
                 self.models.append(model_c)
-            # print(i, '-done')
+            print(i, end=" ")
 
     #5. Mutate
     def mutate(self):
         mutate_power = weights_mutate_power * mutation_decrement ** self.generation_id
-        print("Mutating, Power =", mutate_power)
+        print("\nMutating, Power={}, Finished: ".format(mutate_power), end=" ")
         for i in range(3, self.size):
             convs = [self.models[i].conv1, self.models[i].conv2, self.models[i].conv3]
             for conv in convs:
@@ -140,6 +146,20 @@ class Population:
                     noise = torch.randn(1).mul_(mutate_power).to(device)
                     #add noise to each of neuron
                     conv[0].weight.data.add_(noise[0])
-            # print(i, '-done')
+            print(i, end=" ")
+
+    def succession(self):
+        print("\nSuccession: worse ids:", end=" ")
+        for i in range(self.size):
+            if self.fitnesses[i].to().numpy() < self.old_fitnesses[i].to().numpy():
+                self.models[i] = self.old_models[i]
+                print(i, end=" ")
+
+    def backup(self):
+        for i in range(self.size):
+            torch.save(self.models[i], "models_backup/tetris_backup_{}".format(i))
+            pd.DataFrame(self.fitnesses.to().numpy()).to_csv('models_backup/fitnesses_backup.csv')
+
+
 
 
