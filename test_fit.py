@@ -61,6 +61,8 @@ def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id):
                         conv_b_transpose[j][point_one:point_two].t()
                     conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
     print(model_id, end=" ")
+    if model_id % 25 == 0:
+        print("")
     return model_c
 
 

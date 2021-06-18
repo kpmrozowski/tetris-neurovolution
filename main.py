@@ -6,11 +6,11 @@ if __name__ == "__main__":
     random.seed(101)
     old_population = None
     elite_count = 3
-    crossover_mode = "two_point"
+    crossover_mode = "mean"
     # "mean"
     selection_mode = "ranking"
-    pop_size = 9
-    n_workers = 5
+    pop_size = 98
+    n_workers = 7
 
     generation_count = 10000
 

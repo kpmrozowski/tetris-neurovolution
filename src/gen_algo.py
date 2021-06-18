@@ -91,11 +91,14 @@ class Population:
             probs = [np.power(old_fitnesses[i], 2) / sum_fitnesses for i in range(self.size)]
 
             self.sort_ids = np.argsort(probs)[::-1]
-            print('\nall fitnesses: ', [old_fitnesses[i].astype(int) for i in self.sort_ids])
-            pd.DataFrame([old_fitnesses[i] for i in self.sort_ids]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
+            print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
+                                        if i % 25 else print(old_fitnesses[i].astype(int)) for i in self.sort_ids])
+            pd.DataFrame([old_fitnesses[i] for i in
+                          self.sort_ids]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
             best_model = self.old_models[self.sort_ids[0]]
             print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
-            torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id, self.old_fitnesses[self.sort_ids[0]]))
+            torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
+                                                                     self.old_fitnesses[self.sort_ids[0]]))
 
             for i in range(self.size):
                 rand = np.random.rand()
@@ -131,6 +134,8 @@ class Population:
         print("\nMutating, Power={}, Finished: ".format(mutate_power), end=" ")
         for i in range(3, self.size):
             print(i, end=" ")
+            if i % 25 == 0:
+                print("")
             for conv in [self.models[i].conv1, self.models[i].conv2, self.models[i].conv3]:
                 if np.random.random() < mutation_prob:
                     noise = torch.randn(1).mul_(mutate_power).to(device)
@@ -143,6 +148,8 @@ class Population:
             if self.fitnesses[i].to().numpy() < self.old_fitnesses[i].to().numpy():
                 self.models[i] = self.old_models[i]
                 print(i, end=" ")
+                if i % 25 == 0:
+                    print("")
 
     def backup(self):
         print("\nBackup: ", end=" ")
@@ -150,6 +157,8 @@ class Population:
             torch.save(self.models[i], "models_backup/tetris_backup_{}".format(i))
             pd.DataFrame(self.fitnesses.to().numpy()).to_csv('models_backup/fitnesses_backup.csv')
             print(i, end=" ")
+            if i % 25 == 0:
+                print("")
 
 
 
