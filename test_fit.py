@@ -55,12 +55,11 @@ def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id):
                         a = point_one
                         point_one = point_two
                         point_two = a
-                    conv_b_transpose1 = conv_b[c_i][0].weight.data.t()[j][0:point_one]
-                    conv_b_transpose2 = conv_b[c_i][0].weight.data.t()[j][point_one:point_two]
-                    conv_b_transpose3 = conv_b[c_i][0].weight.data.t()[j][point_two:]
-                    conv_c[c_i][0].weight.data[0:point_one][j] = conv_b_transpose1.t()
-                    conv_c[c_i][0].weight.data[point_one:point_two][j] = conv_b_transpose2.t()
-                    conv_c[c_i][0].weight.data[point_two:][j] = conv_b_transpose3.t()
+                    conv_b_transpose = conv_b[c_i][0].weight.data.t()
+                    conv_c[c_i][0].weight.data.t()[j][0:point_one] = conv_b_transpose[j][0:point_one].t()
+                    conv_c[c_i][0].weight.data.t()[j][point_one:point_two] = \
+                        conv_b_transpose[j][point_one:point_two].t()
+                    conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
     print(model_id, end=" ")
     return model_c
 
