@@ -58,21 +58,28 @@ def multicrossover(size, selected_ids, old_models, crossover_mode, model_id):
                         conv_c[c_i][0].weight.data[point_one:point_two][j] = \
                             conv_c[c_i][0].weight.data[point_one:point_two][j]
                         conv_c[c_i][0].weight.data[point_two:][j] = conv_b[c_i][0].weight.data[point_two:][j]
-    print("cr-", model_id, end=" ", sep="")
+    print(model_id, end=" ")
     return model_c
 
-def one_thread_workout(models, i, tests_in_queue, fitnesses):
+
+def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elite_to_skip):
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
     results = []
     for j in range(queued_count, queued_count + tests_in_queue[i]):
-        results.append(Test(models[j],j, fitnesses))
+        if j < len(elite_to_skip):
+            if elite_to_skip[j] == 1:
+                results.append(old_fitnesses[j])
+            else:
+                results.append(test(models[j], j, fitnesses))
+        else:
+            results.append(test(models[j], j, fitnesses))
     print('paial_results:', results)
     return results
 
 
-def Test(model, i, fitnesses):
+def test(model, i, fitnesseses):
     if torch.cuda.is_available():
         torch.cuda.manual_seed(123)
     else:
@@ -134,6 +141,6 @@ def Test(model, i, fitnesses):
             file_object = open('best_models/all_fitnesses.txt', 'a')
             file_object.write('{},{}\n'.format(i, result))
             file_object.close()
-            fitnesses[i] = result
+            fitnesseses[i] = result
             return result
         

@@ -22,8 +22,6 @@ device = 'cuda'
 #4. Crossover
 #5. Mutation
 
-
-
 class Population:
     def __init__(
             self,
@@ -39,6 +37,7 @@ class Population:
         self.generation_id = generation_id
         self.fitnesses = torch.zeros(self.size)
         self.elite_count = elite_count
+        self.elite_to_skip = np.zeros(self.elite_count)
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
@@ -47,6 +46,7 @@ class Population:
         if old_population is None:
             self.old_models = [torch.load("trained_models/tetris") for i in range(size)]
             self.models = [torch.load("trained_models/tetris") for i in range(size)]
+            self.old_fitnesses = np.zeros(self.size)
             self.mutate()
             self.evaluate()
             # self.pool_test(size)
@@ -75,7 +75,8 @@ class Population:
         processes: List[Process] = []
         self.fitnesses.share_memory_()
         for i in range(self.n_workers):
-            p = Process(target=one_thread_workout, args=(self.old_models, i, self.in_queue, self.fitnesses, ))
+            p = Process(target=one_thread_workout, args=(self.old_models, i, self.in_queue, self.fitnesses,
+                                                         self.old_fitnesses, self.elite_to_skip, ))
             p.start()
             processes.append(p)
         for p in processes:
@@ -84,19 +85,17 @@ class Population:
 
     def selection(self, selection_mode="ranking"):
         print("Selection")
-        #selekcja rankingowa
         if selection_mode == "ranking":
             old_fitnesses = self.old_fitnesses.to().numpy()
             sum_fitnesses = np.sum(np.power(old_fitnesses, 2))
             probs = [np.power(old_fitnesses[i], 2) / sum_fitnesses for i in range(self.size)]
 
             self.sort_ids = np.argsort(probs)[::-1]
-            print('\nall fitnesses: ', [old_fitnesses[i] for i in self.sort_ids])
+            print('\nall fitnesses: ', [old_fitnesses[i].astype(int) for i in self.sort_ids])
             pd.DataFrame([old_fitnesses[i] for i in self.sort_ids]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
             best_model = self.old_models[self.sort_ids[0]]
             print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
-            torch.save(best_model, "best_models/tetris_{}".format(self.generation_id))
-            print("Crossver: done:", end=" ")
+            torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id, self.old_fitnesses[self.sort_ids[0]]))
 
             for i in range(self.size):
                 rand = np.random.rand()
@@ -105,15 +104,15 @@ class Population:
                     selected_id += 1
                     rand -= probs[selected_id]
                 self.selected_ids[i] = selected_id
-
         self.selected_ids = self.selected_ids.astype(int)
 
-
-
     def crossover(self, crossover_mode="mean"):
+        print("Crossver: done:", end=" ")
         for i in range(self.elite_count):
             model_c = self.old_models[self.sort_ids[i]]
             self.models[i] = model_c
+            if self.sort_ids[i] == 1:
+                self.elite_to_skip[i] = 1
 
         set_start_method('spawn', force=True)
         processes: List[Process] = []
@@ -133,10 +132,8 @@ class Population:
         for i in range(3, self.size):
             print(i, end=" ")
             for conv in [self.models[i].conv1, self.models[i].conv2, self.models[i].conv3]:
-                # for i in range(conv[0].weight.size()[0]):
                 if np.random.random() < mutation_prob:
                     noise = torch.randn(1).mul_(mutate_power).to(device)
-                    #add noise to each of neuron
                     conv[0].weight.data.add_(noise[0])
         print("")
 
@@ -148,9 +145,11 @@ class Population:
                 print(i, end=" ")
 
     def backup(self):
+        print("\nBackup: ", end=" ")
         for i in range(self.size):
             torch.save(self.models[i], "models_backup/tetris_backup_{}".format(i))
             pd.DataFrame(self.fitnesses.to().numpy()).to_csv('models_backup/fitnesses_backup.csv')
+            print(i, end=" ")
 
 
 
