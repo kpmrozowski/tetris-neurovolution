@@ -15,15 +15,17 @@ tetris_width = 10
 tetris_height = 20
 tetris_block_size = 30
 
+
 def crossover_prepare(elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models):
     queued_count = 0
     for k in range(process_id):
         queued_count += crossovers_in_queue[k]
     for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
         if model_id >= elite_count:
-            models[model_id] = multicrossover(size, selected_ids, old_models, crossover_mode, model_id)
+            models[model_id] = multi_crossover(size, selected_ids, old_models, crossover_mode, model_id)
 
-def multicrossover(size, selected_ids, old_models, crossover_mode, model_id):
+
+def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id):
     # 3. Parents selection
     mother_id = np.random.randint(size)
     father_id = np.random.randint(size)
@@ -39,25 +41,26 @@ def multicrossover(size, selected_ids, old_models, crossover_mode, model_id):
     for c_i in range(len(conv_b)):
         # 4. Crossover
         for conv in range(3):
-            for i in range(conv_c[c_i][0].weight.size()[0]):
-                for j in range(conv_c[c_i][0].weight.size()[1]):
-                    if crossover_mode == "mean":
+            for j in range(conv_c[c_i][0].weight.size()[1]):
+                if crossover_mode == "mean":
+                    for i in range(conv_c[c_i][0].weight.size()[0]):
                         a = np.random.random()
                         conv_c[c_i][0].weight.data[i][j] = a * conv_b[c_i][0].weight.data[i][j] + (1 - a) * \
                             conv_a[c_i][0].weight.data[i][j]
-                    if crossover_mode == "two_point":
-                        point_one = np.random.random()
-                        point_two = np.random.random()
+                if crossover_mode == "two_point":
+                    point_one = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
+                    point_two = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
 
-                        if point_one > point_two:
-                            a = point_one
-                            point_one = point_two
-                            point_two = a
-                        # To jest zle: (conv_c[1][0].weight.data[0:0.12345][4]) ?
-                        conv_c[c_i][0].weight.data[0:point_one][j] = conv_b[c_i][0].weight.data[0:point_one][j]
-                        conv_c[c_i][0].weight.data[point_one:point_two][j] = \
-                            conv_c[c_i][0].weight.data[point_one:point_two][j]
-                        conv_c[c_i][0].weight.data[point_two:][j] = conv_b[c_i][0].weight.data[point_two:][j]
+                    if point_one > point_two:
+                        a = point_one
+                        point_one = point_two
+                        point_two = a
+                    conv_b_transpose1 = conv_b[c_i][0].weight.data.t()[j][0:point_one]
+                    conv_b_transpose2 = conv_b[c_i][0].weight.data.t()[j][point_one:point_two]
+                    conv_b_transpose3 = conv_b[c_i][0].weight.data.t()[j][point_two:]
+                    conv_c[c_i][0].weight.data[0:point_one][j] = conv_b_transpose1.t()
+                    conv_c[c_i][0].weight.data[point_one:point_two][j] = conv_b_transpose2.t()
+                    conv_c[c_i][0].weight.data[point_two:][j] = conv_b_transpose3.t()
     print(model_id, end=" ")
     return model_c
 

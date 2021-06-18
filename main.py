@@ -1,9 +1,13 @@
+import random
+
 from src.gen_algo import Population
 
 if __name__ == "__main__":
+    random.seed(101)
     old_population = None
     elite_count = 3
-    crossover_mode = "mean"
+    crossover_mode = "two_point"
+    # "mean"
     selection_mode = "ranking"
     pop_size = 96
     n_workers = 6
