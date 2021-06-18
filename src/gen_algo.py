@@ -96,6 +96,10 @@ class Population:
             best_model = self.old_models[self.sort_ids[0]]
             print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
             torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id, self.old_fitnesses[self.sort_ids[0]]))
+<<<<<<< Updated upstream
+=======
+            print("Crossver: done:", end=" ")
+>>>>>>> Stashed changes
 
             for i in range(self.size):
                 rand = np.random.rand()

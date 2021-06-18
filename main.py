@@ -5,8 +5,8 @@ if __name__ == "__main__":
     elite_count = 3
     crossover_mode = "mean"
     selection_mode = "ranking"
-    pop_size = 98
-    n_workers = 7
+    pop_size = 96
+    n_workers = 6
 
     generation_count = 10000
 
