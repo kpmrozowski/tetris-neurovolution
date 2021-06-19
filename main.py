@@ -17,7 +17,7 @@ if __name__ == "__main__":
     crossover_mode = "two_point"
     # "mean"
     selection_mode = "tournament" # ranking
-    pop_size = 9
+    pop_size = 96
     n_workers = 6
     games_per_evaluation = 3
 
