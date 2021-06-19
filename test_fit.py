@@ -3,29 +3,33 @@
 """
 import argparse
 import torch
-import cv2
 import pandas as pd
 import numpy as np
 from src.tetris_slim import Tetris
 import torch.nn as nn
-from src.deep_q_network import DeepQNetwork
-from torch.multiprocessing import Pool, Process, set_start_method
+import random
 
 tetris_width = 10
 tetris_height = 20
 tetris_block_size = 30
 
 
-def crossover_prepare(elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models):
+def crossover_prepare(elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models, seed):
+    # random.seed(seed)
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
     queued_count = 0
     for k in range(process_id):
         queued_count += crossovers_in_queue[k]
     for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
         if model_id >= elite_count:
-            models[model_id] = multi_crossover(size, selected_ids, old_models, crossover_mode, model_id)
+            models[model_id] = multi_crossover(size, selected_ids, old_models, crossover_mode, model_id, seed,)
 
 
-def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id):
+def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id, seed):
+    # random.seed(seed)
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
     # 3. Parents selection
     mother_id = np.random.randint(size)
     father_id = np.random.randint(size)
@@ -66,31 +70,43 @@ def multi_crossover(size, selected_ids, old_models, crossover_mode, model_id):
     return model_c
 
 
-def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elite_to_skip):
+def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elite_to_skip, seed, games_per_evaluation):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
     results = []
     for j in range(queued_count, queued_count + tests_in_queue[i]):
+        fitnesses_to_mean = np.zeros(games_per_evaluation)
         if j < len(elite_to_skip):
             if elite_to_skip[j] == 1:
                 results.append(old_fitnesses[j])
+                fitnesses[j] = old_fitnesses[j]
             else:
-                results.append(test(models[j], j, fitnesses))
+                for game_id in range(games_per_evaluation):
+                    fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
+                print('fitnesses_to_mean =', fitnesses_to_mean)
+                mean_fitness = np.mean(fitnesses_to_mean)
+                results.append(mean_fitness)
+                fitnesses[j] = mean_fitness
         else:
-            results.append(test(models[j], j, fitnesses))
+            for game_id in range(games_per_evaluation):
+                fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
+            print('fitnesses_to_mean =', fitnesses_to_mean)
+            mean_fitness = np.mean(fitnesses_to_mean)
+            results.append(mean_fitness)
+            fitnesses[j] = mean_fitness
+        print("{}. result={}".format(i, fitnesses[j]))
+        file_object = open('best_models/all_fitnesses.txt', 'a')
+        file_object.write('{},{}\n'.format(i, fitnesses[j]))
+        file_object.close()
     print('paial_results:', results)
     return results
 
 
-def test(model, i, fitnesseses):
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(123)
-    else:
-        torch.manual_seed(123)
-
-    # model = DeepQNetwork()
-    # model.eval()
+def test(model, seed):
     if False: # save weights
         ii = 1
         for layer in model.modules():
@@ -124,7 +140,7 @@ def test(model, i, fitnesseses):
                         layer.weight.data = torch.Tensor(conv3).cuda()
                     ii += 1
 
-    env = Tetris(width=tetris_width, height=tetris_height, block_size=tetris_block_size)
+    env = Tetris(width=tetris_width, height=tetris_height, block_size=tetris_block_size, seed=seed)
     env.reset()
     if torch.cuda.is_available():
         model.cuda()
@@ -141,10 +157,5 @@ def test(model, i, fitnesseses):
         result, done = env.step(action, render=False)
 
         if done:
-            print("{}. result={}".format(i, result))
-            file_object = open('best_models/all_fitnesses.txt', 'a')
-            file_object.write('{},{}\n'.format(i, result))
-            file_object.close()
-            fitnesseses[i] = result
             return result
         

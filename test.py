@@ -25,10 +25,10 @@ def one_thread_workout(models, i, thread_elements, fitnesses):
 
 
 def Test(model, i, fitnesses):
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(123)
-    else:
-        torch.manual_seed(123)
+    # if torch.cuda.is_available():
+    #     torch.cuda.manual_seed(123)
+    # else:
+    #     torch.manual_seed(123)
 
     # model = DeepQNetwork()
     # model.eval()

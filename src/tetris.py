@@ -59,7 +59,7 @@ class Tetris:
         self.reset()
 
     def reset(self):
-        random.seed(101)
+        # random.seed(101)
         self.board = [[0] * self.width for _ in range(self.height)]
         self.tetrominoes = 0
         self.cleared_lines = 0
@@ -145,7 +145,7 @@ class Tetris:
         return board
 
     def new_piece(self):
-        random.seed(101)
+        # random.seed(101)
         if not len(self.bag):
             self.bag = list(range(len(self.pieces)))
             random.shuffle(self.bag)

@@ -48,7 +48,8 @@ class Tetris:
 
     score = 0
 
-    def __init__(self, height=20, width=10, block_size=20):
+    def __init__(self, height=20, width=10, block_size=20, seed=101):
+        self.seed = seed
         self.height = height
         self.width = width
         # self.block_size = block_size
@@ -59,6 +60,7 @@ class Tetris:
         self.reset()
 
     def reset(self):
+        random.seed(self.seed)
         self.board = [[0] * self.width for _ in range(self.height)]
         self.tetrominoes = 0
         self.cleared_lines = 0
@@ -144,6 +146,7 @@ class Tetris:
         return board
 
     def new_piece(self):
+        # random.seed(self.seed)
         if not len(self.bag):
             self.bag = list(range(len(self.pieces)))
             random.shuffle(self.bag)

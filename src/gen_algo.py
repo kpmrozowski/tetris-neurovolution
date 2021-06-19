@@ -4,13 +4,14 @@ from typing import List
 import numpy as np
 import torch
 from torch.multiprocessing import Pool, Process, set_start_method
+from src.deep_q_network import DeepQNetwork
 
 from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
 elitism_pct = 0.2
-mutation_prob = 0.9
-weights_mutate_power = 0.01
+mutation_prob = 0.5
+weights_mutate_power = 11
 mutation_decrement = 0.96
 device = 'cuda'
 
@@ -31,7 +32,11 @@ class Population:
             selection_mode="ranking",
             generation_id=0,
             size=9,
-            n_workers=8):
+            n_workers=8,
+            seed_a=101,
+            games_per_evaluation=3):
+        self.gpe = games_per_evaluation
+        self.seed_a = seed_a
         self.size = size
         self.n_workers = n_workers
         self.generation_id = generation_id
@@ -44,8 +49,10 @@ class Population:
             self.in_queue[i] += 1
 
         if old_population is None:
-            self.old_models = [torch.load("trained_models/tetris") for i in range(size)]
-            self.models = [torch.load("trained_models/tetris") for i in range(size)]
+            # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
+            self.old_models = [DeepQNetwork() for _ in range(size)]
+            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+            self.models = [DeepQNetwork() for _ in range(size)]
             self.old_fitnesses = np.zeros(self.size)
             self.mutate()
             self.evaluate()
@@ -55,7 +62,8 @@ class Population:
         else:
             #1. Population
             self.old_models = old_population.models
-            self.models = [torch.load("trained_models/tetris") for i in range(size)]
+            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+            self.models = [DeepQNetwork() for _ in range(size)]
             self.old_fitnesses = old_population.fitnesses
 
             self.sort_ids = np.zeros(self.size)
@@ -76,7 +84,8 @@ class Population:
         self.fitnesses.share_memory_()
         for i in range(self.n_workers):
             p = Process(target=one_thread_workout, args=(self.old_models, i, self.in_queue, self.fitnesses,
-                                                         self.old_fitnesses, self.elite_to_skip, ))
+                                                         self.old_fitnesses, self.elite_to_skip, self.seed_a + i,
+                                                         self.gpe))
             p.start()
             processes.append(p)
         for p in processes:
@@ -121,7 +130,7 @@ class Population:
         processes: List[Process] = []
         for i in range(self.n_workers):
             p = Process(target=crossover_prepare, args=(self.elite_count, self.in_queue, self.size, self.selected_ids,
-                        self.old_models, crossover_mode, i, self.old_models, ))
+                        self.old_models, crossover_mode, i, self.old_models, self.seed_a, ))
             processes.append(p)
         for p in processes:
             p.start()
@@ -136,6 +145,8 @@ class Population:
             print(i, end=" ")
             if i % 25 == 0:
                 print("")
+            # torch.manual_seed(self.seed_a + i)
+            # np.random.seed(self.seed_a + i)
             for conv in [self.models[i].conv1, self.models[i].conv2, self.models[i].conv3]:
                 if np.random.random() < mutation_prob:
                     noise = torch.randn(1).mul_(mutate_power).to(device)
