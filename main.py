@@ -9,8 +9,8 @@ if __name__ == "__main__":
     crossover_mode = "two_point"
     # "mean"
     selection_mode = "ranking"
-    pop_size = 9
-    n_workers = 5
+    pop_size = 96
+    n_workers = 6
 
     generation_count = 10000
 
