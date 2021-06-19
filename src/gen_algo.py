@@ -10,8 +10,8 @@ from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
 elitism_pct = 0.2
-mutation_prob = 0.5
-weights_mutate_power = 11
+mutation_prob = 0.9
+weights_mutate_power = 0.5
 mutation_decrement = 0.96
 device = 'cuda'
 
@@ -32,8 +32,8 @@ class Population:
             selection_mode="ranking",
             generation_id=0,
             size=9,
-            n_workers=8,
             seed_a=101,
+            n_workers=8,
             games_per_evaluation=3):
         self.gpe = games_per_evaluation
         self.seed_a = seed_a
@@ -107,7 +107,7 @@ class Population:
             best_model = self.old_models[self.sort_ids[0]]
             print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
             torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
-                                                                     self.old_fitnesses[self.sort_ids[0]]))
+                                                                     self.old_fitnesses.to().numpy()[self.sort_ids[0]].astype(int)))
 
             for i in range(self.size):
                 rand = np.random.rand()

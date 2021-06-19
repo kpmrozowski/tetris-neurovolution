@@ -77,33 +77,32 @@ def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elit
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
-    results = []
+    results = np.array([])
     for j in range(queued_count, queued_count + tests_in_queue[i]):
+        i += 1
         fitnesses_to_mean = np.zeros(games_per_evaluation)
         if j < len(elite_to_skip):
             if elite_to_skip[j] == 1:
-                results.append(old_fitnesses[j])
+                results = np.append(results, old_fitnesses[j])
                 fitnesses[j] = old_fitnesses[j]
             else:
                 for game_id in range(games_per_evaluation):
                     fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
-                print('fitnesses_to_mean =', fitnesses_to_mean)
                 mean_fitness = np.mean(fitnesses_to_mean)
-                results.append(mean_fitness)
+                results = np.append(results, mean_fitness)
                 fitnesses[j] = mean_fitness
         else:
             for game_id in range(games_per_evaluation):
                 fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
-            print('fitnesses_to_mean =', fitnesses_to_mean)
             mean_fitness = np.mean(fitnesses_to_mean)
-            results.append(mean_fitness)
+            results = np.append(results, mean_fitness)
             fitnesses[j] = mean_fitness
-        print("{}. result={}".format(i, fitnesses[j]))
+        print("{}. result={}, 'fitnesses_to_mean = {}".format(i, fitnesses[j], fitnesses_to_mean))
         file_object = open('best_models/all_fitnesses.txt', 'a')
         file_object.write('{},{}\n'.format(i, fitnesses[j]))
         file_object.close()
-    print('paial_results:', results)
-    return results
+    print('paial_fitnesseses:', results.astype(int))
+    return fitnesses
 
 
 def test(model, seed):
