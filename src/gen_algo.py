@@ -9,11 +9,10 @@ from src.deep_q_network import DeepQNetwork
 from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
-elitism_pct = 0.2
 mutation_prob = 0.9
-weights_mutate_power = 0.5
+weights_mutate_power = 0.15
 mutation_decrement = 0.96
-device = 'cuda'
+device = 'cpu'
 
 #Genetic algorithm
 
@@ -49,10 +48,10 @@ class Population:
             self.in_queue[i] += 1
 
         if old_population is None:
-            # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
-            self.old_models = [DeepQNetwork() for _ in range(size)]
-            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
-            self.models = [DeepQNetwork() for _ in range(size)]
+            self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
+            #self.old_models = [DeepQNetwork() for _ in range(size)]
+            self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+            #self.models = [DeepQNetwork() for _ in range(size)]
             self.old_fitnesses = np.zeros(self.size)
             self.mutate()
             self.evaluate()
@@ -62,8 +61,8 @@ class Population:
         else:
             #1. Population
             self.old_models = old_population.models
-            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
-            self.models = [DeepQNetwork() for _ in range(size)]
+            self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+            #self.models = [DeepQNetwork() for _ in range(size)]
             self.old_fitnesses = old_population.fitnesses
 
             self.sort_ids = np.zeros(self.size)
@@ -94,8 +93,8 @@ class Population:
 
     def selection(self, selection_mode="ranking"):
         print("Selection")
+        old_fitnesses = self.old_fitnesses.to().numpy()
         if selection_mode == "ranking":
-            old_fitnesses = self.old_fitnesses.to().numpy()
             sum_fitnesses = np.sum(np.power(old_fitnesses, 2))
             probs = [np.power(old_fitnesses[i], 2) / sum_fitnesses for i in range(self.size)]
 
@@ -116,7 +115,21 @@ class Population:
                     selected_id += 1
                     rand -= probs[selected_id]
                 self.selected_ids[i] = selected_id
-        self.selected_ids = self.selected_ids.astype(int)
+            self.selected_ids = self.selected_ids.astype(int)
+
+        if selection_mode == "tournament":
+            for i in range(self.size):
+                rand = np.random.randint(0, self.size, 5)
+                idx = -1
+                fitness = -1
+                for element in rand:
+                    actual_max_fitness = old_fitnesses[element]
+                    if actual_max_fitness > fitness:
+                        idx = element
+                        fitness = actual_max_fitness
+                        
+                self.selected_ids[i] = idx
+            self.selected_ids = self.selected_ids.astype(int)
 
     def crossover(self, crossover_mode="mean"):
         print("Crossver: done:", end=" ")

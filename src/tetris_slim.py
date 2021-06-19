@@ -3,7 +3,6 @@
 """
 import numpy as np
 from PIL import Image
-import cv2
 from matplotlib import style
 import torch
 import random
