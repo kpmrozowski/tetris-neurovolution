@@ -12,7 +12,7 @@ import pandas as pd
 mutation_prob = 0.9
 weights_mutate_power = 0.15
 mutation_decrement = 0.96
-device = 'cpu'
+device = 'cuda'
 
 #Genetic algorithm
 
@@ -94,20 +94,19 @@ class Population:
     def selection(self, selection_mode="ranking"):
         print("Selection")
         old_fitnesses = self.old_fitnesses.to().numpy()
+        sum_fitnesses = np.sum(np.power(old_fitnesses, 2))
+        probs = [np.power(old_fitnesses[i], 2) / sum_fitnesses for i in range(self.size)]
+
+        self.sort_ids = np.argsort(probs)[::-1]
+        print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
+                                    if i % 25 else print(old_fitnesses[i].astype(int)) for i in self.sort_ids])
+        pd.DataFrame([old_fitnesses[i] for i in
+                      self.sort_ids]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
+        best_model = self.old_models[self.sort_ids[0]]
+        print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
+        torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
+                                                                 self.old_fitnesses.to().numpy()[self.sort_ids[0]].astype(int)))
         if selection_mode == "ranking":
-            sum_fitnesses = np.sum(np.power(old_fitnesses, 2))
-            probs = [np.power(old_fitnesses[i], 2) / sum_fitnesses for i in range(self.size)]
-
-            self.sort_ids = np.argsort(probs)[::-1]
-            print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
-                                        if i % 25 else print(old_fitnesses[i].astype(int)) for i in self.sort_ids])
-            pd.DataFrame([old_fitnesses[i] for i in
-                          self.sort_ids]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
-            best_model = self.old_models[self.sort_ids[0]]
-            print('best model fitness: {}'.format(self.old_fitnesses[self.sort_ids[0]]))
-            torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
-                                                                     self.old_fitnesses.to().numpy()[self.sort_ids[0]].astype(int)))
-
             for i in range(self.size):
                 rand = np.random.rand()
                 selected_id = -1

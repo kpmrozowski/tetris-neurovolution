@@ -14,11 +14,11 @@ if __name__ == "__main__":
     np.random.seed(seed)
     old_population = None
     elite_count = 3
-    crossover_mode = "mean"
+    crossover_mode = "two_point"
     # "mean"
-    selection_mode = "ranking" #tournament
-    pop_size = 98
-    n_workers = 7
+    selection_mode = "tournament" # ranking
+    pop_size = 9
+    n_workers = 6
     games_per_evaluation = 3
 
     generation_count = 10000
