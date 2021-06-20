@@ -11,8 +11,8 @@ import pandas as pd
 
 mutation_prob = 1.0
 crossover_prob = 0.5
-weights_mutate_power = 0.01
-mutation_decrement = 0.96
+weights_mutate_power = 0.05
+mutation_decrement = 0.95
 device = 'cuda'
 
 #Genetic algorithm
@@ -60,10 +60,10 @@ class Population:
                 self.selection(selection_mode)
                 self.crossover(crossover_mode)
             else:
-                self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
-                # self.old_models = [DeepQNetwork() for _ in range(size)]
-                self.models = [torch.load("trained_models/tetris") for _ in range(size)]
-                # self.models = [DeepQNetwork() for _ in range(size)]
+                # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
+                self.old_models = [DeepQNetwork() for _ in range(size)]
+                # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+                self.models = [DeepQNetwork() for _ in range(size)]
             self.mutate()
             self.evaluate()
             self.backup()
