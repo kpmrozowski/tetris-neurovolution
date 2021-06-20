@@ -42,21 +42,30 @@ class Population:
         self.fitnesses = torch.zeros(self.size)
         self.elite_count = elite_count
         self.elite_to_skip = np.zeros(self.elite_count)
+        self.sort_ids = np.zeros(self.size)
+        self.selected_ids = np.zeros(self.size)
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
             self.in_queue[i] += 1
 
         if old_population is None:
-            self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
+            self.old_models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
+            self.models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
+            self.old_fitnesses = np.genfromtxt('models_backup/fitnesses_backup.csv', delimiter=',')
+            self.old_fitnesses = torch.from_numpy(self.old_fitnesses)
+            self.selection(selection_mode)
+            self.crossover(crossover_mode)
+            # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
             #self.old_models = [DeepQNetwork() for _ in range(size)]
-            self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
             #self.models = [DeepQNetwork() for _ in range(size)]
-            self.old_fitnesses = np.zeros(self.size)
+            # self.old_fitnesses = np.zeros(self.size)
             self.mutate()
             self.evaluate()
             # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
+            self.succession()
             self.backup()
         else:
             #1. Population
@@ -65,8 +74,6 @@ class Population:
             #self.models = [DeepQNetwork() for _ in range(size)]
             self.old_fitnesses = old_population.fitnesses
 
-            self.sort_ids = np.zeros(self.size)
-            self.selected_ids = np.zeros(self.size)
             self.selection(selection_mode)
             self.crossover(crossover_mode)
             self.mutate()
