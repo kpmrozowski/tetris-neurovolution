@@ -10,7 +10,7 @@ from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
 mutation_prob = 0.9
-crossover_chance = 0.5
+crossover_prob = 1
 weights_mutate_power = 0.15
 mutation_decrement = 0.96
 device = 'cuda'
@@ -139,7 +139,7 @@ class Population:
         set_start_method('spawn', force=True)
         processes: List[Process] = []
         for i in range(self.n_workers):
-            p = Process(target=crossover_prepare, args=(crossover_chance, self.elite_count, self.in_queue, self.size,
+            p = Process(target=crossover_prepare, args=(crossover_prob, self.elite_count, self.in_queue, self.size,
                         self.selected_ids, self.old_models, crossover_mode, i, self.old_models, self.seed_a, ))
             processes.append(p)
         for p in processes:

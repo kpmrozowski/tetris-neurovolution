@@ -14,7 +14,7 @@ tetris_height = 20
 tetris_block_size = 30
 
 
-def crossover_prepare(crossover_chance, elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models, seed):
+def crossover_prepare(crossover_prob, elite_count, crossovers_in_queue, size, selected_ids, old_models, crossover_mode, process_id, models, seed):
     # random.seed(seed)
     # torch.manual_seed(seed)
     # np.random.seed(seed)
@@ -23,10 +23,10 @@ def crossover_prepare(crossover_chance, elite_count, crossovers_in_queue, size, 
         queued_count += crossovers_in_queue[k]
     for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
         if model_id >= elite_count:
-            models[model_id] = multi_crossover(crossover_chance, size, selected_ids, old_models, crossover_mode, model_id, seed,)
+            models[model_id] = multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mode, model_id, seed,)
 
 
-def multi_crossover(crossover_chance, size, selected_ids, old_models, crossover_mode, model_id, seed):
+def multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mode, model_id, seed):
     # random.seed(seed)
     # torch.manual_seed(seed)
     np.random.seed(seed + model_id)
@@ -47,12 +47,14 @@ def multi_crossover(crossover_chance, size, selected_ids, old_models, crossover_
         for conv in range(3):
             for j in range(conv_c[c_i][0].weight.size()[1]):
                 cr_rand = np.random.random()
-                if crossover_mode == "mean" and crossover_chance < cr_rand:
+                if crossover_mode == "mean" and crossover_prob < cr_rand:
                     for i in range(conv_c[c_i][0].weight.size()[0]):
                         a = np.random.random()
                         conv_c[c_i][0].weight.data[i][j] = a * conv_b[c_i][0].weight.data[i][j] + (1 - a) * \
                             conv_a[c_i][0].weight.data[i][j]
-                if crossover_mode == "two_point":
+                else:
+                    conv_c = conv_a
+                if crossover_mode == "two_point" and crossover_prob < cr_rand:
                     point_one = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
                     point_two = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
 
@@ -65,6 +67,8 @@ def multi_crossover(crossover_chance, size, selected_ids, old_models, crossover_
                     conv_c[c_i][0].weight.data.t()[j][point_one:point_two] = \
                         conv_b_transpose[j][point_one:point_two].t()
                     conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
+                else:
+                    conv_c = conv_a
     print(model_id, end=" ")
     if model_id % 25 == 0:
         print("")
