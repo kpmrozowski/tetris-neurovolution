@@ -9,9 +9,9 @@ from src.deep_q_network import DeepQNetwork
 from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
-mutation_prob = 0.9
-crossover_prob = 1
-weights_mutate_power = 0.15
+mutation_prob = 1.0
+crossover_prob = 0.5
+weights_mutate_power = 0.50
 mutation_decrement = 0.96
 device = 'cuda'
 
@@ -44,27 +44,27 @@ class Population:
         self.elite_count = elite_count
         self.elite_to_skip = np.zeros(self.elite_count)
         self.selected_ids = np.zeros(self.size)
+        self.old_fitnesses = np.zeros(self.size)
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
             self.in_queue[i] += 1
 
         if old_population is None:
-            self.old_models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
-            self.models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
-            self.old_fitnesses = np.genfromtxt('models_backup/fitnesses_backup.csv', delimiter=',')
-            self.old_fitnesses = torch.from_numpy(self.old_fitnesses)
-            # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
-            #self.old_models = [DeepQNetwork() for _ in range(size)]
-            # self.models = [torch.load("trained_models/tetris") for _ in range(size)]
-            #self.models = [DeepQNetwork() for _ in range(size)]
-            # self.old_fitnesses = np.zeros(self.size)
-            self.selection(selection_mode)
-            self.crossover(crossover_mode)
+            if generation_id != 0:
+                self.old_models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
+                self.models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
+                self.old_fitnesses = np.genfromtxt('models_backup/fitnesses_backup.csv', delimiter=',')
+                self.old_fitnesses = torch.from_numpy(self.old_fitnesses)
+                self.selection(selection_mode)
+                self.crossover(crossover_mode)
+            else:
+                self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
+                # self.old_models = [DeepQNetwork() for _ in range(size)]
+                self.models = [torch.load("trained_models/tetris") for _ in range(size)]
+                # self.models = [DeepQNetwork() for _ in range(size)]
             self.mutate()
             self.evaluate()
-            # self.pool_test(size)
-            # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
             self.backup()
         else:
             #1. Population
@@ -77,9 +77,8 @@ class Population:
             self.crossover(crossover_mode)
             self.mutate()
             self.evaluate()
-            # self.pool_test(size)
             # self.fitnesses = np.array([Test(self.models[i], i) for i in range(size)])
-            self.succession()
+            # self.succession()
             self.backup()
 
     def selection(self, selection_mode="ranking"):
@@ -149,6 +148,7 @@ class Population:
         pass
 
     def mutate(self):
+        print(np.random.get_state())
         mutate_power = weights_mutate_power * mutation_decrement ** self.generation_id
         print("\nMutating, Power={}, Finished: ".format(mutate_power), end=" ")
         for i in range(3, self.size):
@@ -169,8 +169,8 @@ class Population:
         processes: List[Process] = []
         self.fitnesses.share_memory_()
         for i in range(self.n_workers):
-            p = Process(target=one_thread_workout, args=(self.old_models, i, self.in_queue, self.fitnesses,
-                                                         self.old_fitnesses, self.elite_to_skip, self.seed_a + i,
+            p = Process(target=one_thread_workout, args=(self.models, i, self.in_queue, self.fitnesses,
+                                                         self.old_fitnesses, self.elite_to_skip, self.seed_a,
                                                          self.gpe))
             p.start()
             processes.append(p)

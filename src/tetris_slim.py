@@ -2,7 +2,8 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 import numpy as np
-from PIL import Image
+# from PIL import Image
+# import cv2
 from matplotlib import style
 import torch
 import random
@@ -52,8 +53,8 @@ class Tetris:
         self.height = height
         self.width = width
         # self.block_size = block_size
-        self.extra_board = np.ones(((3 + self.height) * self.block_size, self.width * int(self.block_size / 2), 3),
-                                   dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
+        # self.extra_board = np.ones(((3 + self.height) * self.block_size, self.width * int(self.block_size / 2), 3),
+        #                            dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
         # self.text_color = (200, 20, 220)
         self.collision = False
         self.reset()
@@ -240,86 +241,86 @@ class Tetris:
 
     def render(self, video=None):
         pass
-        # img = np.zeros((self.height * self.block_size, self.width * self.block_size, 3))
-        # if not self.gameover:
-        #     ii = 0
-        #     for row in self.get_current_board_state():
-        #         jj = 0
-        #         for p in row:
-        #             block = self.piece_colors[p]
-        #             img[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = block
-        #             jj += 1
-        #         ii += 1
-        # else:
-        #     ii = 0
-        #     for row in self.board:
-        #         jj = 0
-        #         for p in row:
-        #             block = self.piece_colors[p]
-        #             img[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = block
-        #             jj += 1
-        #         ii += 1
-        #
-        # piece_i = [row[:] for row in self.pieces[self.ind_next]]
-        # piece_rows = len(piece_i)
-        # piece_cols = len(piece_i[0])
-        # next_piece_1 = np.zeros((piece_rows * self.block_size, piece_cols * self.block_size, 3))
-        # ii = 0
-        # for row in self.pieces[self.ind_next]:
-        #     jj = 0
-        #     for p in row:
-        #         next_piece_1[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = self.piece_colors[p]
-        #         jj += 1
-        #     ii += 1
-        #
-        # next_piece_1[[i * self.block_size for i in range(piece_rows)], :, :] = 0
-        # next_piece_1[:, [i * self.block_size for i in range(piece_cols)], :] = 0
-        # next_piece_1 = np.pad(next_piece_1, [(0, (2 - piece_rows) * self.block_size), ((4 - piece_cols) * self.block_size, 0), (0, 0)])
-        #
-        # piece_left_padding = np.ones(((self.width - 4) * self.block_size, 2 * self.block_size, 3),
-        #                            dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
-        # piece_left_padding = Image.fromarray(piece_left_padding, "RGB")
-        # piece_left_padding = piece_left_padding.resize(((self.width - 4) * self.block_size, 2 * self.block_size))
-        #
-        # next_piece_2 = np.concatenate((piece_left_padding, next_piece_1), axis=1)
-        #
-        # piece_bottom_padding = np.ones((self.width * self.block_size, self.block_size, 3),
-        #                            dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
-        # piece_bottom_padding = Image.fromarray(piece_bottom_padding, "RGB")
-        # piece_bottom_padding = piece_bottom_padding.resize((self.width * self.block_size, self.block_size))
-        #
-        # next_piece_img = np.concatenate((next_piece_2, piece_bottom_padding), axis=0)
-        #
-        # img[[i * self.block_size for i in range(self.height)], :, :] = 0
-        # img[:, [i * self.block_size for i in range(self.width)], :] = 0
-        #
-        # img = np.concatenate((next_piece_img, img), axis=0)
-        #
-        # img = np.concatenate((img, self.extra_board), axis=1)
-        # img = np.array(img, dtype=np.uint8)
-        #
-        # cv2.putText(img, "Next " + str(self.ind_next), (self.width * self.block_size + int(self.block_size / 2), self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        #
-        # cv2.putText(img, "Score:", (self.width * self.block_size + int(self.block_size / 2), 5 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        # cv2.putText(img, str(self.score),
-        #             (self.width * self.block_size + int(self.block_size / 2), 6 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        #
-        # cv2.putText(img, "Pieces:", (self.width * self.block_size + int(self.block_size / 2), 8 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        # cv2.putText(img, str(self.tetrominoes),
-        #             (self.width * self.block_size + int(self.block_size / 2), 9 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        #
-        # cv2.putText(img, "Lines:", (self.width * self.block_size + int(self.block_size / 2), 11 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        # cv2.putText(img, str(self.cleared_lines),
-        #             (self.width * self.block_size + int(self.block_size / 2), 12 * self.block_size),
-        #             fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
-        #
-        # # if video:
-        # #     video.write(img)
-        # cv2.imshow("Deep Q-Learning Tetris", img)
-        # cv2.waitKey(1)
+    #     img = np.zeros((self.height * self.block_size, self.width * self.block_size, 3))
+    #     if not self.gameover:
+    #         ii = 0
+    #         for row in self.get_current_board_state():
+    #             jj = 0
+    #             for p in row:
+    #                 block = self.piece_colors[p]
+    #                 img[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = block
+    #                 jj += 1
+    #             ii += 1
+    #     else:
+    #         ii = 0
+    #         for row in self.board:
+    #             jj = 0
+    #             for p in row:
+    #                 block = self.piece_colors[p]
+    #                 img[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = block
+    #                 jj += 1
+    #             ii += 1
+    #
+    #     piece_i = [row[:] for row in self.pieces[self.ind_next]]
+    #     piece_rows = len(piece_i)
+    #     piece_cols = len(piece_i[0])
+    #     next_piece_1 = np.zeros((piece_rows * self.block_size, piece_cols * self.block_size, 3))
+    #     ii = 0
+    #     for row in self.pieces[self.ind_next]:
+    #         jj = 0
+    #         for p in row:
+    #             next_piece_1[ii*self.block_size:(ii + 1)*self.block_size, jj*self.block_size:(jj + 1)*self.block_size] = self.piece_colors[p]
+    #             jj += 1
+    #         ii += 1
+    #
+    #     next_piece_1[[i * self.block_size for i in range(piece_rows)], :, :] = 0
+    #     next_piece_1[:, [i * self.block_size for i in range(piece_cols)], :] = 0
+    #     next_piece_1 = np.pad(next_piece_1, [(0, (2 - piece_rows) * self.block_size), ((4 - piece_cols) * self.block_size, 0), (0, 0)])
+    #
+    #     piece_left_padding = np.ones(((self.width - 4) * self.block_size, 2 * self.block_size, 3),
+    #                                dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
+    #     piece_left_padding = Image.fromarray(piece_left_padding, "RGB")
+    #     piece_left_padding = piece_left_padding.resize(((self.width - 4) * self.block_size, 2 * self.block_size))
+    #
+    #     next_piece_2 = np.concatenate((piece_left_padding, next_piece_1), axis=1)
+    #
+    #     piece_bottom_padding = np.ones((self.width * self.block_size, self.block_size, 3),
+    #                                dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
+    #     piece_bottom_padding = Image.fromarray(piece_bottom_padding, "RGB")
+    #     piece_bottom_padding = piece_bottom_padding.resize((self.width * self.block_size, self.block_size))
+    #
+    #     next_piece_img = np.concatenate((next_piece_2, piece_bottom_padding), axis=0)
+    #
+    #     img[[i * self.block_size for i in range(self.height)], :, :] = 0
+    #     img[:, [i * self.block_size for i in range(self.width)], :] = 0
+    #
+    #     img = np.concatenate((next_piece_img, img), axis=0)
+    #
+    #     img = np.concatenate((img, self.extra_board), axis=1)
+    #     img = np.array(img, dtype=np.uint8)
+    #
+    #     cv2.putText(img, "Next " + str(self.ind_next), (self.width * self.block_size + int(self.block_size / 2), self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #
+    #     cv2.putText(img, "Score:", (self.width * self.block_size + int(self.block_size / 2), 5 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #     cv2.putText(img, str(self.score),
+    #                 (self.width * self.block_size + int(self.block_size / 2), 6 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #
+    #     cv2.putText(img, "Pieces:", (self.width * self.block_size + int(self.block_size / 2), 8 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #     cv2.putText(img, str(self.tetrominoes),
+    #                 (self.width * self.block_size + int(self.block_size / 2), 9 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #
+    #     cv2.putText(img, "Lines:", (self.width * self.block_size + int(self.block_size / 2), 11 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #     cv2.putText(img, str(self.cleared_lines),
+    #                 (self.width * self.block_size + int(self.block_size / 2), 12 * self.block_size),
+    #                 fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1.0, color=self.text_color)
+    #
+    #     # if video:
+    #     #     video.write(img)
+    #     cv2.imshow("Deep Q-Learning Tetris", img)
+    #     cv2.waitKey(1)

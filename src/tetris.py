@@ -48,7 +48,8 @@ class Tetris:
 
     score = 0
 
-    def __init__(self, height=20, width=10, block_size=20):
+    def __init__(self, height=20, width=10, block_size=20, seed=101):
+        self.seed = seed
         self.height = height
         self.width = width
         self.block_size = block_size

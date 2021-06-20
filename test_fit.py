@@ -76,9 +76,6 @@ def multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mo
 
 
 def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elite_to_skip, seed, games_per_evaluation):
-    random.seed(seed)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
