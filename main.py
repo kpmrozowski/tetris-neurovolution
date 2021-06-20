@@ -20,6 +20,7 @@ if __name__ == "__main__":
     pop_size = 96
     n_workers = 6
     games_per_evaluation = 3
+    generation_id = 30
 
     generation_count = 10000
 
@@ -27,13 +28,13 @@ if __name__ == "__main__":
                             elite_count,
                             crossover_mode,
                             selection_mode,
-                            0,
+                            generation_id,
                             pop_size,
                             seed,
                             n_workers,
                             games_per_evaluation)
 
-    for generation_id in range(1, generation_count):
+    for generation_id in range(generation_id + 1, generation_count):
         population = Population(population,
                                 elite_count,
                                 crossover_mode,
