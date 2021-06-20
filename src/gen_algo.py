@@ -13,6 +13,7 @@ mutation_prob = 1.0
 crossover_prob = 0.5
 weights_mutate_power = 0.05
 mutation_decrement = 0.95
+tournament_size = 200
 device = 'cuda'
 
 #Genetic algorithm
@@ -124,7 +125,7 @@ class Population:
 
         if selection_mode == "tournament":
             for i in range(self.size):
-                rand = np.random.randint(0, self.size, 5)
+                rand = np.random.randint(0, self.size, tournament_size)
                 idx = -1
                 fitness = -1
                 for element in rand:
