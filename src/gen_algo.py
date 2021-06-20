@@ -9,9 +9,9 @@ from src.deep_q_network import DeepQNetwork
 from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
-mutation_prob = 1.1
+mutation_prob = 1.0
 crossover_prob = 0.5
-weights_mutate_power = 0.50
+weights_mutate_power = 0.01
 mutation_decrement = 0.96
 device = 'cuda'
 
@@ -37,6 +37,7 @@ class Population:
             games_per_evaluation=3):
         self.gpe = games_per_evaluation
         self.seed_a = seed_a
+        np.random.seed(self.seed_a)
         self.size = size
         self.n_workers = n_workers
         self.generation_id = generation_id
@@ -44,7 +45,7 @@ class Population:
         self.elite_count = elite_count
         self.elite_to_skip = np.zeros(self.elite_count)
         self.selected_ids = np.zeros(self.size)
-        self.old_fitnesses = np.zeros(self.size)
+        self.old_fitnesses = torch.zeros(self.size)
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
@@ -82,6 +83,7 @@ class Population:
             self.backup()
 
     def selection(self, selection_mode="ranking"):
+        np.random.seed(self.seed_a)
         print("Selection")
         old_fitnesses = self.old_fitnesses.to().numpy()
         sum_fitnesses = np.sum(np.power(old_fitnesses, 1))
@@ -92,12 +94,13 @@ class Population:
             self.old_models[i] = self.old_models[sort_ids[i]]
             self.old_fitnesses[i] = self.old_fitnesses[sort_ids[i]]  # sorted self.old_fitnesses
             probs[i] = probs[sort_ids[i]]                            # sorted selection probabilities
+        old_fitnesses_unsorted = old_fitnesses
         old_fitnesses = self.old_fitnesses.to().numpy()    # sorted old_fitnesses
 
         for i in range(self.elite_count):
             self.models[i] = self.old_models[i]
             self.fitnesses[i] = self.old_fitnesses[i]
-            if sort_ids[i] == i:
+            if sort_ids[i] == i or round(old_fitnesses[i]) == round(old_fitnesses_unsorted[i]):
                 self.elite_to_skip[i] = 1
 
         print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
@@ -132,6 +135,7 @@ class Population:
                         
                 self.selected_ids[i] = idx
             self.selected_ids = self.selected_ids.astype(int)
+        print('seeds: ', np.random.get_state()[1][0:5])
 
     def crossover(self, crossover_mode="mean"):
         print("Crossver: done:", end=" ")
@@ -145,13 +149,13 @@ class Population:
             p.start()
         for p in processes:
             p.join()
-        pass
+        print('seeds: ', np.random.get_state()[1][0:5])
 
     def mutate(self):
-        print(np.random.get_state())
+        # np.random.seed(self.seed_a)
         mutate_power = weights_mutate_power * mutation_decrement ** self.generation_id
         print("\nMutating, Power={}, Finished: ".format(mutate_power), end=" ")
-        for i in range(3, self.size):
+        for i in range(self.elite_count, self.size):
             print(i, end=" ")
             if i % 25 == 0:
                 print("")
@@ -161,6 +165,7 @@ class Population:
                 if np.random.random() < mutation_prob:
                     noise = torch.randn(1).mul_(mutate_power).to(device)
                     conv[0].weight.data.add_(noise[0])
+        print('seeds: ', np.random.get_state()[1][0:5])
         print("")
 
     def evaluate(self):
@@ -168,6 +173,7 @@ class Population:
         set_start_method('spawn', force=True)
         processes: List[Process] = []
         self.fitnesses.share_memory_()
+        self.old_fitnesses.share_memory_()
         for i in range(self.n_workers):
             p = Process(target=one_thread_workout, args=(self.models, i, self.in_queue, self.fitnesses,
                                                          self.old_fitnesses, self.elite_to_skip, self.seed_a,
@@ -176,7 +182,7 @@ class Population:
             processes.append(p)
         for p in processes:
             p.join()
-        pass
+        np.random.seed(self.seed_a)
 
     def succession(self):
         print("\nSuccession: worse ids:", end=" ")

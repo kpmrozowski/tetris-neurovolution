@@ -16,9 +16,9 @@ if __name__ == "__main__":
     elite_count = 6
     crossover_mode = "two_point"
     # "mean"
-    selection_mode = "tournament" # ranking
-    pop_size = 98
-    n_workers = 2
+    selection_mode = "ranking" # tournament
+    pop_size = 9
+    n_workers = 6
     games_per_evaluation = 3
     generation_backup_id = 0
 
