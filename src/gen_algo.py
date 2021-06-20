@@ -9,7 +9,7 @@ from src.deep_q_network import DeepQNetwork
 from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
-mutation_prob = 1.0
+mutation_prob = 1.1
 crossover_prob = 0.5
 weights_mutate_power = 0.50
 mutation_decrement = 0.96
