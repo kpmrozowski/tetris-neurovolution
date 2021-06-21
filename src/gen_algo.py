@@ -57,7 +57,8 @@ class Population:
                 self.models = [torch.load("models_backup/tetris_backup_{}".format(i)) for i in range(size)]
                 self.old_fitnesses = np.genfromtxt('models_backup/fitnesses_backup.csv', delimiter=',')
                 self.old_fitnesses = torch.from_numpy(self.old_fitnesses)
-                self.selection(selection_mode)
+                self.elite_to_skip = np.ones(self.elite_count)
+                self.selection(selection_mode, backup=True)
                 self.crossover(crossover_mode)
             else:
                 # self.old_models = [torch.load("trained_models/tetris") for _ in range(size)]
@@ -82,7 +83,7 @@ class Population:
             # self.succession()
             self.backup()
 
-    def selection(self, selection_mode="ranking"):
+    def selection(self, selection_mode="ranking", backup=False):
         np.random.seed(self.seed_a)
         print("Selection")
         old_fitnesses = self.old_fitnesses.to().numpy()
@@ -90,10 +91,16 @@ class Population:
         probs = np.array([np.power(old_fitnesses[i], 1) / sum_fitnesses for i in range(self.size)])
 
         sort_ids = np.argsort(probs)[::-1]
+        old_models_sorted = [torch.load("trained_models/tetris") for _ in range(self.size)]
+        old_fitnesses_sorted = torch.zeros(self.size)
+        probs_sorted = probs
         for i in range(self.size):
-            self.old_models[i] = self.old_models[sort_ids[i]]
-            self.old_fitnesses[i] = self.old_fitnesses[sort_ids[i]]  # sorted self.old_fitnesses
-            probs[i] = probs[sort_ids[i]]                            # sorted selection probabilities
+            old_models_sorted[i] = self.old_models[sort_ids[i]]
+            old_fitnesses_sorted[i] = self.old_fitnesses[sort_ids[i]]  # sorted self.old_fitnesses
+            probs_sorted[i] = probs[sort_ids[i]]                            # sorted selection probabilities
+        self.old_models = old_models_sorted
+        self.old_fitnesses = old_fitnesses_sorted
+        probs = probs_sorted
         old_fitnesses_unsorted = old_fitnesses
         old_fitnesses = self.old_fitnesses.to().numpy()    # sorted old_fitnesses
 
@@ -102,15 +109,15 @@ class Population:
             self.fitnesses[i] = self.old_fitnesses[i]
             if sort_ids[i] == i or round(old_fitnesses[i]) == round(old_fitnesses_unsorted[i]):
                 self.elite_to_skip[i] = 1
-
-        print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
-                                    if i % 25 else print(old_fitnesses[i].astype(int)) for i in range(self.size)])
-        pd.DataFrame([old_fitnesses[i] for i in
-                      range(self.size)]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
-        best_model = self.old_models[0]
-        print('best model fitness: {}'.format(self.old_fitnesses[0]))
-        torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
-                                                                 self.old_fitnesses.to().numpy()[0].astype(int)))
+        if not backup:
+            print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
+                                        if i % 25 else print(old_fitnesses[i].astype(int)) for i in range(self.size)])
+            pd.DataFrame([old_fitnesses[i] for i in
+                          range(self.size)]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
+            best_model = self.old_models[0]
+            print('best model fitness: {}'.format(self.old_fitnesses[0]))
+            torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
+                                                                     self.old_fitnesses.to().numpy()[0].astype(int)))
 
         if selection_mode == "ranking":
             for i in range(self.size):
