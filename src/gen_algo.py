@@ -12,7 +12,7 @@ import pandas as pd
 mutation_prob = 1.0
 crossover_prob = 0.75
 weights_mutate_power = 0.005
-mutation_decrement = 0.95
+mutation_decrement = 0.9
 tournament_size = 384
 device = 'cuda'
 

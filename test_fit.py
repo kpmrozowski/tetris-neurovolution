@@ -8,6 +8,7 @@ import numpy as np
 from src.tetris_slim import Tetris
 import torch.nn as nn
 import random
+import gc
 
 tetris_width = 10
 tetris_height = 20
@@ -79,30 +80,41 @@ def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elit
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
-    results = np.array([])
+    # results = np.array([])
     for j in range(queued_count, queued_count + tests_in_queue[i]):
         fitnesses_to_mean = np.zeros(games_per_evaluation)
         if j < len(elite_to_skip):
             if elite_to_skip[j] == 1:
-                results = np.append(results, old_fitnesses[j].to().numpy())
+                # results = np.append(results, old_fitnesses[j].to().numpy())
                 print("{}. result={}, skipped".format(j, fitnesses[j]))
+            else:
+                last_test = test(models[j], seed)
+                if last_test > 1e4 or games_per_evaluation == 1:
+                    fitnesses[j] = last_test
+                else:
+                    fitnesses_to_mean[0] = last_test
+                    for game_id in range(games_per_evaluation):
+                        fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
+                    mean_fitness = np.mean(fitnesses_to_mean)
+                    # results = np.append(results, mean_fitness)
+                    fitnesses[j] = torch.tensor(mean_fitness)
+                print("{}. result={}, fitnesses_to_mean = {}".format(j, np.round(fitnesses[j].to().numpy()), fitnesses_to_mean))
+        else:
+            last_test = test(models[j], seed)
+            if last_test > 1e4 or games_per_evaluation == 1:
+                fitnesses[j] = last_test
             else:
                 for game_id in range(games_per_evaluation):
                     fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
                 mean_fitness = np.mean(fitnesses_to_mean)
-                results = np.append(results, mean_fitness)
+                # results = np.append(results, mean_fitness)
                 fitnesses[j] = torch.tensor(mean_fitness)
-                print("{}. result={}, fitnesses_to_mean = {}".format(j, np.round(fitnesses[j].to().numpy()), fitnesses_to_mean))
-        else:
-            for game_id in range(games_per_evaluation):
-                fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
-            mean_fitness = np.mean(fitnesses_to_mean)
-            results = np.append(results, mean_fitness)
-            fitnesses[j] = torch.tensor(mean_fitness)
             print("{}. result={}, fitnesses_to_mean = {}".format(j, np.round(fitnesses[j].to().numpy()), fitnesses_to_mean))
         file_object = open('best_models/all_fitnesses.txt', 'a')
         file_object.write('{},{}\n'.format(j, fitnesses[j].to().numpy()))
         file_object.close()
+        del file_object
+        gc.collect()
     #print('paial_fitnesseses:', results.astype(int))
     return fitnesses
 
@@ -158,5 +170,7 @@ def test(model, seed):
         result, done = env.step(action, render=False)
 
         if done:
+            del env
+            gc.collect()
             return result
         
