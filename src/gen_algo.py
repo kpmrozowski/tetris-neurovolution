@@ -162,16 +162,50 @@ class Population:
 
     def crossover(self, crossover_mode="mean"):
         print("Crossver: done:", end=" ")
-        set_start_method('spawn', force=True)
-        processes: List[Process] = []
-        for i in range(self.n_workers):
-            p = Process(target=crossover_prepare, args=(crossover_prob, self.elite_count, self.in_queue, self.size,
-                        self.selected_ids, self.old_models, crossover_mode, i, self.old_models, self.seed_a, ))
-            processes.append(p)
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+        if crossover_mode == "mean":
+            set_start_method('spawn', force=True)
+            processes: List[Process] = []
+            for i in range(self.n_workers):
+                p = Process(target=crossover_prepare, args=(crossover_prob, self.elite_count, self.in_queue, self.size,
+                            self.selected_ids, self.old_models, crossover_mode, i, self.old_models, self.seed_a, ))
+                processes.append(p)
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
+        if crossover_mode == "two_point":
+            for i in range(self.size):
+                mother_id = np.random.randint(self.size)
+                father_id = np.random.randint(self.size)
+
+                model_a = self.old_models[self.selected_ids[mother_id]]
+                model_b = self.old_models[self.selected_ids[father_id]]
+                model_c = torch.load("trained_models/tetris")
+
+                conv_a = [model_a.conv1, model_a.conv2, model_a.conv3]
+                conv_b = [model_b.conv1, model_b.conv2, model_b.conv3]
+                conv_c = [model_c.conv1, model_c.conv2, model_c.conv3]
+                for c_i in range(len(conv_b)):
+                    # 4. Crossover
+                    for conv in range(3):
+                        for j in range(conv_c[c_i][0].weight.size()[1]):
+                            cr_rand = np.random.random()
+                            if crossover_prob < cr_rand:
+                                point_one = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
+                                point_two = np.random.randint(0, conv_c[c_i][0].weight.size()[0])
+
+                                if point_one > point_two:
+                                    a = point_one
+                                    point_one = point_two
+                                    point_two = a
+                                conv_b_transpose = conv_b[c_i][0].weight.data.t()
+                                conv_a_transpose = conv_a[c_i][0].weight.data.t()
+                                conv_c[c_i][0].weight.data.t()[j][0:point_one] = conv_b_transpose[j][0:point_one].t()
+                                conv_c[c_i][0].weight.data.t()[j][point_one:point_two] = \
+                                    conv_a_transpose[j][point_one:point_two].t()
+                                conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
+                            else:
+                                conv_c = conv_a
         print('seeds: ', np.random.get_state()[1][0:5])
 
     def mutate(self):

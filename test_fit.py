@@ -23,8 +23,9 @@ def crossover_prepare(crossover_prob, elite_count, crossovers_in_queue, size, se
     for k in range(process_id):
         queued_count += crossovers_in_queue[k]
     for model_id in range(queued_count, queued_count + crossovers_in_queue[process_id]):
+        offset = crossovers_in_queue[process_id]
         if model_id >= elite_count:
-            models[model_id] = multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mode, model_id, seed,)
+            models[model_id - offset] = multi_crossover(crossover_prob, crossovers_in_queue[process_id], selected_ids, old_models, crossover_mode, model_id, seed)
 
 
 def multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mode, model_id, seed):
