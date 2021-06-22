@@ -11,9 +11,9 @@ import pandas as pd
 
 mutation_prob = 1.0
 crossover_prob = 0.75
-weights_mutate_power = 0.055
+weights_mutate_power = 0.005
 mutation_decrement = 0.95
-tournament_size = 5
+tournament_size = 384
 device = 'cuda'
 
 #Genetic algorithm
@@ -117,8 +117,11 @@ class Population:
                 break
 
         for i in range(self.elite_count):
-            self.models[i] = self.old_models[elite_diversal_buffer_ids[i]]
-            self.old_fitnesses[i] = self.old_fitnesses[elite_diversal_buffer_ids[i]]
+            if i < len(elite_diversal_buffer_ids):
+                idx = elite_diversal_buffer_ids[i]
+                self.old_models[i] = self.old_models[idx]
+                self.old_fitnesses[i] = self.old_fitnesses[idx]
+            self.models[i] = self.old_models[i]
             self.fitnesses[i] = self.old_fitnesses[i]
             if sort_ids[i] == i or np.round(self.old_fitnesses[i].to().numpy()) == round(old_fitnesses[i]):
                 self.elite_to_skip[i] = 1
