@@ -13,11 +13,11 @@ if __name__ == "__main__":
         torch.manual_seed(seed)
     np.random.seed(seed)
     old_population = None
-    elite_count = 384
+    elite_count = 192 * 2
     crossover_mode = "two_point"
     # "mean"
     selection_mode = "tournament" # ranking
-    pop_size = 1920
+    pop_size = 960 * 2
     n_workers = 9 # 9
     games_per_evaluation = 3
     generation_backup_id = 0

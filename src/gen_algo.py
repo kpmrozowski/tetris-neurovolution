@@ -14,7 +14,7 @@ mutation_prob = 1.0
 crossover_prob = 0.75
 weights_mutate_power = 0.005
 mutation_decrement = 0.9
-tournament_size = 384
+tournament_size = 192 * 2
 device = 'cuda'
 
 #Genetic algorithm
@@ -51,7 +51,7 @@ class Population:
 
         self.in_queue = [np.floor_divide(self.size, self.n_workers) for _ in range(self.n_workers)]
         for i in range(np.remainder(self.size, self.n_workers)):
-            self.in_queue[i] += 1
+            self.in_queue[0] += 1
 
         if old_population is None:
             if generation_id != 0:
@@ -175,7 +175,7 @@ class Population:
                 p.join()
 
         if crossover_mode == "two_point":
-            for i in range(self.size):
+            for i in range(self.elite_count, self.size):
                 mother_id = np.random.randint(self.size)
                 father_id = np.random.randint(self.size)
 
@@ -207,6 +207,7 @@ class Population:
                                 conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
                             else:
                                 conv_c = conv_a
+                self.models[i] = conv_c
         print('seeds: ', np.random.get_state()[1][0:5])
 
     def mutate(self):
