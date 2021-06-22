@@ -210,6 +210,9 @@ class Population:
                 self.models[i].conv1 = conv_c[0]
                 self.models[i].conv2 = conv_c[1]
                 self.models[i].conv3 = conv_c[2]
+                print(i, end=" ")
+                if i % 25 == 0:
+                    print("")
         print('seeds: ', np.random.get_state()[1][0:5])
 
     def mutate(self):
