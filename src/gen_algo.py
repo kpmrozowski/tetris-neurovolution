@@ -173,6 +173,7 @@ class Population:
                 p.start()
             for p in processes:
                 p.join()
+
         if crossover_mode == "two_point":
             for i in range(self.size):
                 mother_id = np.random.randint(self.size)
