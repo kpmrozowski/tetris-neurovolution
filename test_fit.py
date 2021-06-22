@@ -76,7 +76,7 @@ def multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mo
     return model_c
 
 
-def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elite_to_skip, seed, games_per_evaluation):
+def one_thread_workout(models, i, tests_in_queue, fitnesses, elite_to_skip, seed, games_per_evaluation):
     queued_count = 0
     for k in range(i):
         queued_count += tests_in_queue[k]
@@ -88,24 +88,24 @@ def one_thread_workout(models, i, tests_in_queue, fitnesses, old_fitnesses, elit
                 # results = np.append(results, old_fitnesses[j].to().numpy())
                 print("{}. result={}, skipped".format(j, fitnesses[j]))
             else:
-                last_test = test(models[j], seed)
+                last_test = test(models[j - queued_count], seed)
                 if last_test > 1e4 or games_per_evaluation == 1:
                     fitnesses[j] = last_test
                 else:
                     fitnesses_to_mean[0] = last_test
                     for game_id in range(games_per_evaluation):
-                        fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
+                        fitnesses_to_mean[game_id] = test(models[j - queued_count], seed + game_id)
                     mean_fitness = np.mean(fitnesses_to_mean)
                     # results = np.append(results, mean_fitness)
                     fitnesses[j] = torch.tensor(mean_fitness)
                 print("{}. result={}, fitnesses_to_mean = {}".format(j, np.round(fitnesses[j].to().numpy()), fitnesses_to_mean))
         else:
-            last_test = test(models[j], seed)
+            last_test = test(models[j - queued_count], seed)
             if last_test > 1e4 or games_per_evaluation == 1:
                 fitnesses[j] = last_test
             else:
                 for game_id in range(games_per_evaluation):
-                    fitnesses_to_mean[game_id] = test(models[j], seed + game_id)
+                    fitnesses_to_mean[game_id] = test(models[j - queued_count], seed + game_id)
                 mean_fitness = np.mean(fitnesses_to_mean)
                 # results = np.append(results, mean_fitness)
                 fitnesses[j] = torch.tensor(mean_fitness)

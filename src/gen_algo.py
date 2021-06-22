@@ -1,3 +1,4 @@
+import gc
 from multiprocessing import Process
 from typing import List
 
@@ -195,11 +196,17 @@ class Population:
         set_start_method('spawn', force=True)
         processes: List[Process] = []
         self.fitnesses.share_memory_()
-        self.old_fitnesses.share_memory_()
         for i in range(self.n_workers):
-            p = Process(target=one_thread_workout, args=(self.models, i, self.in_queue, self.fitnesses,
-                                                         self.old_fitnesses, self.elite_to_skip, self.seed_a,
-                                                         self.gpe))
+            queued_count = 0
+            for k in range(i):
+                queued_count += self.in_queue[k]
+            models_part = []
+            for j in range(queued_count, queued_count + self.in_queue[i]):
+                models_part.append(self.models[j])
+            p = Process(target=one_thread_workout, args=(models_part, i, self.in_queue, self.fitnesses,
+                                                         self.elite_to_skip, self.seed_a, self.gpe))
+            del models_part
+            gc.collect()
             p.start()
             processes.append(p)
         for p in processes:
