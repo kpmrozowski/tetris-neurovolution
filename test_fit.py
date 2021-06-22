@@ -74,6 +74,9 @@ def multi_crossover(crossover_prob, size, selected_ids, old_models, crossover_mo
     print(model_id, end=" ")
     if model_id % 25 == 0:
         print("")
+    model_c.conv1 = conv_c[0]
+    model_c.conv2 = conv_c[1]
+    model_c.conv3 = conv_c[2]
     return model_c
 
 

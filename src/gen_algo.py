@@ -207,7 +207,9 @@ class Population:
                                 conv_c[c_i][0].weight.data.t()[j][point_two:] = conv_b_transpose[j][point_two:].t()
                             else:
                                 conv_c = conv_a
-                self.models[i] = conv_c
+                self.models[i].conv1 = conv_c[0]
+                self.models[i].conv2 = conv_c[1]
+                self.models[i].conv3 = conv_c[2]
         print('seeds: ', np.random.get_state()[1][0:5])
 
     def mutate(self):
