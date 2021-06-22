@@ -10,10 +10,10 @@ from test_fit import one_thread_workout, crossover_prepare
 import pandas as pd
 
 mutation_prob = 1.0
-crossover_prob = 0.5
-weights_mutate_power = 0.05
+crossover_prob = 0.75
+weights_mutate_power = 0.055
 mutation_decrement = 0.95
-tournament_size = 50
+tournament_size = 5
 device = 'cuda'
 
 #Genetic algorithm
@@ -102,23 +102,35 @@ class Population:
         self.old_models = old_models_sorted
         self.old_fitnesses = old_fitnesses_sorted
         probs = probs_sorted
-        old_fitnesses_unsorted = old_fitnesses
-        old_fitnesses = self.old_fitnesses.to().numpy()    # sorted old_fitnesses
+
+        # choose unique
+        elite_diversal_buffer_ids = []
+        last = torch.tensor(0.).to().int()
+        for i in range(self.size):
+            new = torch.round(self.old_fitnesses[i]).to().int()
+            if new != last:
+                elite_diversal_buffer_ids.append(i)
+                last = torch.round(self.old_fitnesses[i]).to().int()
+            else:
+                continue
+            if len(elite_diversal_buffer_ids) == self.elite_count:
+                break
 
         for i in range(self.elite_count):
-            self.models[i] = self.old_models[i]
+            self.models[i] = self.old_models[elite_diversal_buffer_ids[i]]
+            self.old_fitnesses[i] = self.old_fitnesses[elite_diversal_buffer_ids[i]]
             self.fitnesses[i] = self.old_fitnesses[i]
-            if sort_ids[i] == i or round(old_fitnesses[i]) == round(old_fitnesses_unsorted[i]):
+            if sort_ids[i] == i or np.round(self.old_fitnesses[i].to().numpy()) == round(old_fitnesses[i]):
                 self.elite_to_skip[i] = 1
         if not backup:
-            print('\nall fitnesses: ', [old_fitnesses[i].astype(int)
-                                        if i % 25 else print(old_fitnesses[i].astype(int)) for i in range(self.size)])
-            pd.DataFrame([old_fitnesses[i] for i in
+            print('\nall fitnesses: ', np.round(self.old_fitnesses.to().numpy()))
+            print('elite_to_skip: ', self.elite_to_skip)
+            pd.DataFrame([self.old_fitnesses[i].to().numpy() for i in
                           range(self.size)]).to_csv('best_models/fitness_history{}.csv'.format(self.generation_id))
             best_model = self.old_models[0]
             print('best model fitness: {}'.format(self.old_fitnesses[0]))
             torch.save(best_model, "best_models/tetris_{}_{}".format(self.generation_id,
-                                                                     self.old_fitnesses.to().numpy()[0].astype(int)))
+                                                                     self.old_fitnesses[0].to().numpy().astype(int)))
 
         if selection_mode == "ranking":
             for i in range(self.size):
@@ -132,18 +144,17 @@ class Population:
 
         if selection_mode == "tournament":
             for i in range(self.size):
-                rand = np.random.randint(0, self.size, 5)
+                rand = np.random.randint(0, self.size, tournament_size)
                 idx = -1
                 fitness = -1
                 for element in rand:
-                    actual_max_fitness = old_fitnesses[element]
+                    actual_max_fitness = self.old_fitnesses[element].to().numpy()
                     if actual_max_fitness > fitness:
                         idx = element
                         fitness = actual_max_fitness
                         
                 self.selected_ids[i] = idx
             self.selected_ids = self.selected_ids.astype(int)
-        print('seeds: ', np.random.get_state()[1][0:5])
 
     def crossover(self, crossover_mode="mean"):
         print("Crossver: done:", end=" ")
@@ -162,7 +173,7 @@ class Population:
     def mutate(self):
         # np.random.seed(self.seed_a)
         mutate_power = weights_mutate_power * mutation_decrement ** self.generation_id
-        print("\nMutating, Power={}, Finished: ".format(mutate_power), end=" ")
+        print("Mutating, Power={}, Finished: ".format(mutate_power), end=" ")
         for i in range(self.elite_count, self.size):
             print(i, end=" ")
             if i % 25 == 0:
